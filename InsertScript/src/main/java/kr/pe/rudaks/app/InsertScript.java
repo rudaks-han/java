@@ -6,6 +6,8 @@ import java.io.*;
 
 public class InsertScript
 {
+	private static Connection conn;
+
 	public static String LINE = "\r\n";
 
 	private String url;
@@ -14,6 +16,8 @@ public class InsertScript
 	private String pass;
 	private String filename;
 	private String tableName;
+
+	private String outputFilename = "";
 
 	public void setUrl(String url)
 	{
@@ -51,15 +55,9 @@ public class InsertScript
 		}
 	}
 
-	private boolean createScript(String query, String tableName, String fileName)
+	private Connection getConnection() throws Exception
 	{
-		boolean bSuccess = false;
-		Connection conn = null;
-		Statement stmt = null;
-		ResultSet rs = null;
-		RecordSet rset = null;
-		StringBuffer sbSql = new StringBuffer();
-		try
+		if (conn == null)
 		{
 			print("[jdbc driver]" + driver);
 			Class.forName(driver);
@@ -67,12 +65,35 @@ public class InsertScript
 			print("[Connection url]" + url);
 			print(", user : " + user);
 			print(", pass : " + pass);
-			conn  = DriverManager.getConnection(url,user,pass);
+			conn = DriverManager.getConnection(url, user, pass);
 			println("==> OK");
+		}
+		return conn;
+	}
 
+	private void releaseConnection() throws Exception
+	{
+		if (conn  != null)
+		{
+			conn.close();
+		}
+	}
+
+	private boolean createScript(String query, String tableName, String fileName)
+	{
+		boolean bSuccess = false;
+
+		Statement stmt = null;
+		ResultSet rs = null;
+		RecordSet rset = null;
+		StringBuffer sbSql = new StringBuffer();
+		try
+		{
 			stmt = conn.createStatement();
-			if (query != null && !query.toUpperCase().startsWith("SELECT "))
+			if (query != null && query.length() > 0 && !query.toUpperCase().startsWith("SELECT "))
 				query = "SELECT * FROM " + query;
+
+			println("\n[execute sql] " + query);
 
 			rs = stmt.executeQuery(query);
 			rset = new RecordSet(rs);
@@ -140,11 +161,17 @@ public class InsertScript
 				sbInsertSql2 = null;
 			}
 
-			if (filename == null && filename.length() == 0)
-				filename = "script.sql";
-			FileOutputStream fos = new FileOutputStream("./" + filename);
+			if (fileName == null || fileName.length() == 0)
+				fileName = "script.sql";
+			FileOutputStream fos = new FileOutputStream("./" + fileName);
 			fos.write(sbSql.toString().getBytes());
 			fos.close();
+
+			if (outputFilename != null && outputFilename.length() > 0)
+				outputFilename += ",";
+
+			outputFilename += fileName;
+
 			bSuccess = true;
 		}
 		catch (Exception e)
@@ -154,7 +181,6 @@ public class InsertScript
 		finally
 		{
 			if (stmt != null) {	try { stmt.close(); } catch (Exception e) {} }
-			if (conn != null) { try { conn.close(); } catch (Exception e) {} }
 		}
 		return bSuccess;
 	}
@@ -175,8 +201,19 @@ public class InsertScript
 		try
 		{
 			print("[properties] db.properties");
-			InputStream stream = InsertScript.class.getClassLoader().getResourceAsStream("db.properties");
-			properties.load(stream);
+
+			FileInputStream fi = null;
+			try
+			{
+				fi = new FileInputStream("db.properties");
+				properties.load(fi);
+			}
+			catch (FileNotFoundException e)
+			{
+				InputStream stream = InsertScript.class.getClassLoader().getResourceAsStream("db.properties");
+				properties.load(stream);
+			}
+
 			println("==> OK");
 		}
 		catch (IOException e)
@@ -192,6 +229,34 @@ public class InsertScript
 		String filename = properties.getProperty("filename");
 		String tableName = properties.getProperty("tablename");
 
+		List<String> queryList = new ArrayList<String>();
+		for (int i = 0; i < 100; i++)
+		{
+			String temp = properties.getProperty("query." + i);
+			if (temp != null && temp.length() > 0)
+			{
+				queryList.add(temp);
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		List<String> tableNameList = new ArrayList<String>();
+		for (int i = 0; i < 100; i++)
+		{
+			String temp = properties.getProperty("tablename." + i);
+			if (temp != null && temp.length() > 0)
+			{
+				tableNameList.add(temp);
+			}
+			else
+			{
+				break;
+			}
+		}
+
 		InsertScript t = new InsertScript();
 		t.setUrl(url);
 		t.setDriver(driver);
@@ -199,12 +264,40 @@ public class InsertScript
 		t.setPass(pass);
 		t.setTableName(tableName);
 		t.setFilename(filename);
-		boolean bSuccess = t.createScript(query, tableName, filename);
+		boolean bSuccess = false;
+
+		try
+		{
+			t.getConnection();
+
+			if (query != null && query.length() > 0)
+			{
+				bSuccess = t.createScript(query, tableName, filename);
+			}
+
+			if (queryList != null && queryList.size() > 0)
+			{
+				for (int i = 0; i < queryList.size(); i++)
+				{
+					if (queryList.get(i) != null && queryList.get(i).length() > 0)
+					{
+						filename = tableNameList.get(i) + ".sql";
+						bSuccess = t.createScript(queryList.get(i), tableNameList.get(i), filename);
+					}
+				}
+
+			}
+
+			t.releaseConnection();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 		if (bSuccess)
 		{
-			print("[Successfully insert script] " + filename);
-
-			execCommand(filename);
+			print("\n[Successfully insert script] " + t.outputFilename);
 		}
 	}
 

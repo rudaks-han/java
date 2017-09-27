@@ -1,5 +1,5 @@
 {
   "key": "xxx",
-  "secret": "xxxxx",
-  "access_token": "xxxxxxxxxxxxxxxxxxxxxxx"
+  "secret": "xxx",
+  "access_token": "xxxx"
 }
