@@ -1,5 +1,7 @@
 package kr.pe.rudaks.app;
 
+import org.apache.commons.io.FileUtils;
+
 import java.sql.*;
 import java.util.*;
 import java.io.*;
@@ -10,39 +12,20 @@ public class InsertScript
 
 	public static String LINE = "\r\n";
 
+	private String dbType;
 	private String url;
 	private String driver;
 	private String user;
 	private String pass;
 	private String filename;
 	private String tableName;
+	private String query;
+	List<String> queryList;
+	List<String> tableNameList;
+	private String dateConvertNow;
+	private List<String> dateColumnList = new ArrayList<String>();
 
 	private String outputFilename = "";
-
-	public void setUrl(String url)
-	{
-		this.url = url;
-	}
-	public void setDriver(String driver)
-	{
-		this.driver = driver;
-	}
-	public void setUser(String user)
-	{
-		this.user = user;
-	}
-	public void setPass(String pass)
-	{
-		this.pass = pass;
-	}
-	public void setFilename(String filename)
-	{
-		this.filename = filename;
-	}
-	public void setTableName(String tableName)
-	{
-		this.tableName = tableName;
-	}
 
 	static {
 		if( File.separator.equals("/") )
@@ -55,10 +38,136 @@ public class InsertScript
 		}
 	}
 
+	private void readProperty()
+	{
+		Properties properties = new Properties();
+		try
+		{
+			print("[properties] db.properties");
+
+			FileInputStream fi = null;
+			try
+			{
+				fi = new FileInputStream("db.properties");
+				properties.load(fi);
+			}
+			catch (FileNotFoundException e)
+			{
+				InputStream stream = InsertScript.class.getClassLoader().getResourceAsStream("db.properties");
+				properties.load(stream);
+			}
+			finally
+			{
+				if (fi != null)
+					fi.close();
+			}
+
+			println("==> OK");
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+
+		url = properties.getProperty("url");
+		driver = properties.getProperty("driver");
+		user = properties.getProperty("user");
+		pass = properties.getProperty("pass");
+		query = properties.getProperty("query");
+		filename = properties.getProperty("filename");
+		tableName = properties.getProperty("tablename");
+
+		queryList = new ArrayList<String>();
+		for (int i = 0; i < 100; i++)
+		{
+			String temp = properties.getProperty("query." + i);
+			if (temp != null && temp.length() > 0)
+			{
+				queryList.add(temp);
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		tableNameList = new ArrayList<String>();
+		for (int i = 0; i < 100; i++)
+		{
+			String temp = properties.getProperty("tablename." + i);
+			if (temp != null && temp.length() > 0)
+			{
+				tableNameList.add(temp);
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		dateConvertNow = properties.getProperty("date.convert.now");
+		String dateColumn = properties.getProperty("date.column");
+		if (dateColumn != null && dateColumn.length() > 0)
+		{
+			String [] arDateColumn = dateColumn.split(",");
+			if (arDateColumn != null && arDateColumn.length > 0)
+			{
+				for (String temp : arDateColumn)
+				{
+					dateColumnList.add(temp.toUpperCase().trim());
+				}
+			}
+		}
+
+	}
+
+	private boolean executeScript()
+	{
+		boolean bSuccess = false;
+		try
+		{
+			getConnection();
+
+			if (query != null && query.length() > 0)
+			{
+				bSuccess = createScript(query, tableName, filename);
+			}
+
+			if (queryList != null && queryList.size() > 0)
+			{
+				for (int i = 0; i < queryList.size(); i++)
+				{
+					if (queryList.get(i) != null && queryList.get(i).length() > 0)
+					{
+						filename = tableNameList.get(i) + ".sql";
+						bSuccess = createScript(queryList.get(i), tableNameList.get(i), filename);
+					}
+				}
+
+			}
+
+			releaseConnection();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		return bSuccess;
+	}
+
 	private Connection getConnection() throws Exception
 	{
 		if (conn == null)
 		{
+			if (driver.indexOf("oracle") > -1)
+				dbType = "oracle";
+			else if (driver.indexOf("postgresql") > -1)
+				dbType = "postgresql";
+			else if (driver.indexOf("mysql") > -1)
+				dbType = "mysql";
+
+			println("[db type]" + dbType);
 			print("[jdbc driver]" + driver);
 			Class.forName(driver);
 			println("==> OK");
@@ -106,10 +215,11 @@ public class InsertScript
 
 			for (int i=1; i<=rset.getColumnCount(); i++)
 			{
+				String columnName = rset.getColumnName(i);
 				if (i==1)
-					sbInsertSql.append(rset.getColumnName(i));
+					sbInsertSql.append(columnName);
 				else
-					sbInsertSql.append("," + rset.getColumnName(i));
+					sbInsertSql.append("," + columnName);
 			}
 			sbInsertSql.append(") ");
 			sbInsertSql.append("VALUES(");
@@ -124,33 +234,40 @@ public class InsertScript
 					if (i>1)
 						sbInsertSql2.append(", ");
 
-					if (rset.getColumnType(i) == Types.INTEGER || rset.getColumnType(i) == Types.NUMERIC)
+					if ("Y".equals(dateConvertNow) && dateColumnList.size() > 0 && dateColumnList.contains(rset.getColumnName(i)))
 					{
-						strResult = rset.getInt(i) + "";
-					}
-					else if (rset.getColumnType(i) == Types.TIMESTAMP)
-					{
-						strResult = "'" + rset.getTimestamp(i) + "'";
-					}
-					else if (rset.getColumnType(i) == Types.DATE)
-					{
-						if (driver.indexOf("oracle") > -1)
-						{
-							strResult = "TO_DATE('" + rset.getString(i).substring(0, 19) + "', 'yy-mm-dd hh24:mi:ss')";
-						}
-						else
-						{
-							strResult = "'" + rset.getString(i) + "'";
-						}
+						strResult = getDbCurrDate();
 					}
 					else
 					{
-						if (rset.getString(i) == null)
-							strResult = "null";
+						if (rset.getColumnType(i) == Types.INTEGER || rset.getColumnType(i) == Types.NUMERIC)
+						{
+							strResult = rset.getInt(i) + "";
+						}
+						else if (rset.getColumnType(i) == Types.TIMESTAMP)
+						{
+							strResult = "'" + rset.getTimestamp(i) + "'";
+						}
+						else if (rset.getColumnType(i) == Types.DATE)
+						{
+							if (driver.indexOf("oracle") > -1)
+							{
+								strResult = "TO_DATE('" + rset.getString(i).substring(0, 19) + "', 'yy-mm-dd hh24:mi:ss')";
+							}
+							else
+							{
+								strResult = "'" + rset.getString(i) + "'";
+							}
+						}
 						else
 						{
-							strResult = escapeSql(rset.getString(i));
-							strResult = "'" + strResult + "'";
+							if (rset.getString(i) == null)
+								strResult = "null";
+							else
+							{
+								strResult = escapeSql(rset.getString(i));
+								strResult = "'" + strResult + "'";
+							}
 						}
 					}
 					sbInsertSql2.append(strResult);
@@ -163,9 +280,8 @@ public class InsertScript
 
 			if (fileName == null || fileName.length() == 0)
 				fileName = "script.sql";
-			FileOutputStream fos = new FileOutputStream("./" + fileName);
-			fos.write(sbSql.toString().getBytes());
-			fos.close();
+
+			FileUtils.writeStringToFile(new File("./" + fileName), sbSql.toString(), "UTF-8");
 
 			if (outputFilename != null && outputFilename.length() > 0)
 				outputFilename += ",";
@@ -185,6 +301,25 @@ public class InsertScript
 		return bSuccess;
 	}
 
+	private String getDbCurrDate()
+	{
+		String result = "";
+		if ("oracle".equals(dbType))
+		{
+			result = "TO_CHAR(sysdate, 'YYYYMMDDHH24MISS')";
+		}
+		else if ("mysql".equals(dbType))
+		{
+			result = "date_format(now(), '%Y%m%d%H%i%s')";
+		}
+		else if ("postgresql".equals(dbType))
+		{
+			result = "TO_CHAR(now(), 'YYYYMMDDHH24MISS')";
+		}
+
+		return result;
+	}
+
 	public static void println(String str)
 	{
 		System.out.println(str);
@@ -197,103 +332,15 @@ public class InsertScript
 
 	public static void main(String[] args)
 	{
-		Properties properties = new Properties();
-		try
-		{
-			print("[properties] db.properties");
-
-			FileInputStream fi = null;
-			try
-			{
-				fi = new FileInputStream("db.properties");
-				properties.load(fi);
-			}
-			catch (FileNotFoundException e)
-			{
-				InputStream stream = InsertScript.class.getClassLoader().getResourceAsStream("db.properties");
-				properties.load(stream);
-			}
-
-			println("==> OK");
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-
-		String url = properties.getProperty("url");
-		String driver = properties.getProperty("driver");
-		String user = properties.getProperty("user");
-		String pass = properties.getProperty("pass");
-		String query = properties.getProperty("query");
-		String filename = properties.getProperty("filename");
-		String tableName = properties.getProperty("tablename");
-
-		List<String> queryList = new ArrayList<String>();
-		for (int i = 0; i < 100; i++)
-		{
-			String temp = properties.getProperty("query." + i);
-			if (temp != null && temp.length() > 0)
-			{
-				queryList.add(temp);
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		List<String> tableNameList = new ArrayList<String>();
-		for (int i = 0; i < 100; i++)
-		{
-			String temp = properties.getProperty("tablename." + i);
-			if (temp != null && temp.length() > 0)
-			{
-				tableNameList.add(temp);
-			}
-			else
-			{
-				break;
-			}
-		}
-
 		InsertScript t = new InsertScript();
-		t.setUrl(url);
-		t.setDriver(driver);
-		t.setUser(user);
-		t.setPass(pass);
-		t.setTableName(tableName);
-		t.setFilename(filename);
+
+		t.readProperty();
+
+		t.executeScript();
+
 		boolean bSuccess = false;
 
-		try
-		{
-			t.getConnection();
 
-			if (query != null && query.length() > 0)
-			{
-				bSuccess = t.createScript(query, tableName, filename);
-			}
-
-			if (queryList != null && queryList.size() > 0)
-			{
-				for (int i = 0; i < queryList.size(); i++)
-				{
-					if (queryList.get(i) != null && queryList.get(i).length() > 0)
-					{
-						filename = tableNameList.get(i) + ".sql";
-						bSuccess = t.createScript(queryList.get(i), tableNameList.get(i), filename);
-					}
-				}
-
-			}
-
-			t.releaseConnection();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
 
 		if (bSuccess)
 		{

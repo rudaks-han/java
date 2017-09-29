@@ -56,7 +56,23 @@ public class Main
         try
         {
             Properties prop = new Properties();
-            prop.load(new FileInputStream("./patch.properties"));
+
+            FileInputStream fi = null;
+            try
+            {
+                fi = new FileInputStream("patch.properties");
+                prop.load(fi);
+            }
+            catch (FileNotFoundException e)
+            {
+                InputStream stream = Main.class.getClassLoader().getResourceAsStream("patch.properties");
+                prop.load(stream);
+            }
+            finally
+            {
+                if (fi != null)
+                    fi.close();
+            }
 
             jiraSearchCondition = prop.getProperty("jira.search.condition");
             if (jiraSearchCondition != null && jiraSearchCondition.length() > 0)
@@ -89,6 +105,8 @@ public class Main
         catch (Exception e)
         {
             e.printStackTrace();
+
+            debug(e.getMessage());
         }
     }
 
@@ -183,9 +201,18 @@ public class Main
                 String key = (String) issueMap.get("key");
                 HashMap<String, Object> fields = (HashMap<String, Object>) issueMap.get("fields");
                 String summary = (String) fields.get("summary");
-                String priority = (String) ((HashMap<String, Object>) fields.get("priority")).get("name");
-                String patchImportance = (String) ((HashMap<String, Object>) fields.get("customfield_11100")).get("value");
-                String menu = (String) ((HashMap<String, Object>) fields.get("customfield_10202")).get("value");
+                String priority = "";
+                if (fields.get("priority")!= null)
+                    priority = (String) ((HashMap<String, Object>) fields.get("priority")).get("name");
+
+                String patchImportance = "";
+                if (fields.get("customfield_11100") != null)
+                    patchImportance = (String) ((HashMap<String, Object>) fields.get("customfield_11100")).get("value");
+
+                String menu = "";
+                if (fields.get("customfield_10202") != null)
+                    menu = (String) ((HashMap<String, Object>) fields.get("customfield_10202")).get("value");
+
                 String revision = (String) fields.get("customfield_10203"); // revision
                 String responseHistory = (String) fields.get("customfield_10021"); // 처리내역
                 String description = (String) fields.get("description"); // description

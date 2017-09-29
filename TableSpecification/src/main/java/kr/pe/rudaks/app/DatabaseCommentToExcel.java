@@ -1,7 +1,9 @@
 package kr.pe.rudaks.app;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -31,7 +33,7 @@ public class DatabaseCommentToExcel
     private String db;
     private String user; 
     private String password;
-    private String filepath;
+    private String filename;
     private String ownerName;
     
     public static void main(String args[]) 
@@ -74,14 +76,14 @@ public class DatabaseCommentToExcel
             createTableIndex(indexList);
             
             //selectTableCommentsSql
-            
-            filepath = new String(filepath.getBytes("8859_1"), "UTF-8");
-            FileOutputStream fos = new FileOutputStream(filepath);
+
+            filename = new String(filename.getBytes("8859_1"), "UTF-8");
+            FileOutputStream fos = new FileOutputStream(filename);
             workbook.write(fos);
             fos.close();
             
             System.err.println("");
-            System.err.println("Filename >> " + filepath);
+            System.err.println("Filename >> " + filename);
         }
         catch (Exception e) 
         {
@@ -680,8 +682,23 @@ public class DatabaseCommentToExcel
         try
         {
             Properties prop = new Properties();
-            prop.load(new FileInputStream(filePath));
-                        
+            FileInputStream fi = null;
+            try
+            {
+                fi = new FileInputStream(filePath);
+                prop.load(fi);
+            }
+            catch (FileNotFoundException e)
+            {
+                InputStream stream = DatabaseCommentToExcel.class.getClassLoader().getResourceAsStream(filePath);
+                prop.load(stream);
+            }
+            finally
+            {
+                if (fi != null)
+                    fi.close();
+            }
+
             url = prop.getProperty("url");
             port = prop.getProperty("port");
             db = prop.getProperty("db");
@@ -691,7 +708,7 @@ public class DatabaseCommentToExcel
                 ownerName = user.toUpperCase();
             }
             password = prop.getProperty("password");
-            filepath = prop.getProperty("filepath");
+            filename = prop.getProperty("filename");
             //filepath = new String(filepath.getBytes("8859_1"), "EUC-KR");
             
             if (url == null || url.length() == 0)
@@ -724,9 +741,9 @@ public class DatabaseCommentToExcel
                 return false;
             }
             
-            if (filepath == null || filepath.length() == 0)
+            if (filename == null || filename.length() == 0)
             {
-                System.out.println("filepath 정보가 없습니다.");
+                System.out.println("filename 정보가 없습니다.");
                 return false;
             }
             prop = null;
