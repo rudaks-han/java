@@ -1,40 +1,20 @@
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.Set;
+package kr.pe.rudaks.app;
 
+import au.com.bytecode.opencsv.CSVWriter;
+import com.dropbox.core.*;
+import com.dropbox.core.json.JsonReader;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.lang.StringUtils;
 
-import com.dropbox.core.DbxAuthInfo;
-import com.dropbox.core.DbxException;
-import com.dropbox.core.DbxRequestConfig;
-import com.dropbox.core.NetworkIOException;
-import com.dropbox.core.RetryException;
-import com.dropbox.core.json.JsonReader;
-import com.dropbox.core.v2.DbxClientV2;
-import com.dropbox.core.v2.files.CommitInfo;
-import com.dropbox.core.v2.files.FileMetadata;
-import com.dropbox.core.v2.files.UploadErrorException;
-import com.dropbox.core.v2.files.UploadSessionCursor;
-import com.dropbox.core.v2.files.UploadSessionFinishErrorException;
-import com.dropbox.core.v2.files.UploadSessionLookupErrorException;
-import com.dropbox.core.v2.files.WriteMode;
-
-import au.com.bytecode.opencsv.CSVWriter;
+import java.io.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.*;
 
 public class Main 
 {
@@ -185,12 +165,16 @@ public class Main
 	private HashMap<String, String> getFileList() throws IOException
 	{
 		HashMap<String, String> hm = new HashMap<String, String>();
-		
+
+		if (sqlFilesDir.startsWith("."))
+			sqlFilesDir = System.getProperty("user.dir") + "/" + sqlFilesDir;
+
+		//sqlFilesDir = "D:\\_GIT\\java\\SqlToCsv\\sql";
 		File fileList = new File(sqlFilesDir);
 		
 		File [] selectedFiles = fileList.listFiles(new FileFilter() {
 			
-			@Override
+			//@Override
 			public boolean accept(File pathname) {
 				// TODO Auto-generated method stub
 				if (pathname.getName().endsWith("sql"))

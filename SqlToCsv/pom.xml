@@ -57,6 +57,12 @@
             <version>2.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.3-1101-jdbc4</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -78,6 +84,14 @@
                                 <resource>
                                     <directory>.</directory>
                                     <includes>
+                                        <include>run.bat</include>
+                                        <include>db.properties</include>
+                                        <include>readme.txt</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${basedir}/src/main/resources</directory>
+                                    <includes>
                                         <include>db.properties</include>
                                         <include>dropbox.app</include>
                                         <include>readme.txt</include>
@@ -87,6 +101,47 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3.2</version>
+
+                <configuration>
+                    <finalName>${artifactId}-${version}</finalName>
+                    <!-- jar 파일이 생성될 폴더 -->
+                    <outputDirectory>${deploy.target.dir}</outputDirectory>
+                    <archive>
+                        <manifest>
+                            <mainClass>kr.pe.rudaks.app.Main</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                    </archive>
+
+                    <excludes>
+                        <exclude>**/db.properties</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputDirectory>target/lib</outputDirectory>
+                    <overWriteIfNewer>true</overWriteIfNewer>
+                    <includeScope>compile</includeScope>
+                </configuration>
             </plugin>
         </plugins>
     </build>
