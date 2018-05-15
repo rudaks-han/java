@@ -1,0 +1,76 @@
+database:
+  url: jdbc:postgresql://localhost:5432/eer
+  driver: org.postgresql.Driver
+  user: eer
+  pass: eer
+
+settings:
+  dateConvertToNow: N # 날짜컬럼을 현재날짜로 넣을지 여부, Y인 경우 sysdate로 값이 들어감
+  dateColumn: created_date,updated_date
+  saveFileToOne: Y # 파일로 저장을 하나의 파일로 할지 여부 (Y/N)
+  targetDbType: postgresql # SQL을 만들 DB 유형, (oracle/postgresql), merge/upsert 쿼리 만들때 사용
+                # oracle일 경우 MERGE 구문으로 사용
+                # postgresql일 경우 upsert 구문으로 사용(postgresql 9.5이상 지원)
+  sqlDelimiter: ; # SQL 종료 구분자
+
+# [parameters 설명]
+# query에서 실행할 SQL에 값을 대체하고자 할때 사용한다.
+# 아래 쿼리 작성 시 name에 $값을 붙여서 작성한다.
+# 예) where node_id = '$node_id' and account_id = '$account_id'
+#  ==> where node_id = 'NODE0000000001' and account_id = 'agent1'
+
+parameters:
+#- name: node_id
+#  value: NODE0000000001
+#- name: account_id
+#  value: agent1
+
+# [query 설명]
+# sql: 테이블명 or 쿼리 (예: select * from t_node where node_depth = 1), 없으면 table 값으로 대체
+# table: 테이블명 (필수값)
+# where: where조건에 들어갈 값
+# type: SQL 유형 (선택값), 기본값 merge, merge/insert/update 중 선택
+# [예1]
+# - table: t_account
+#   sql: select * from t_account where role_id = 'ACCTMGR'
+# [예2]
+# - table: t_account
+#   where: role_id = 'ACCTMGR'
+
+query:
+
+# 사용자 관리
+- table: t_account, t_account_group, t_account_property, t_account_property_value, t_favorite, t_greeting, t_greeting_contents, t_macro, t_role, t_role_menu_rel
+
+# 카테고리
+- table: t_node, t_node_account_rel, t_node_group_rel, t_node_service, t_code, t_codeset, t_domain_account_rel, t_domain_codeset_rel
+
+# 설정
+- table: t_channel, t_channel_action_rel, t_domain_channel_rel, t_config_node, t_config_property, t_env_node, t_env, t_env_value, t_menu, t_menu_module, t_menu_service, t_survey, t_node_survey_rel, t_survey_item, t_template, t_template_contents, t_user_security, t_work_holiday, t_work_time
+
+# 상담지식
+- table: t_kb, t_kb_contents, t_kb_detail, t_kb_option, t_kb_tag, t_node_kb_rel, t_dic_user, t_dic_synonym
+
+# 이벤트 관리
+- table: t_banner, t_conversion_path, t_event, t_event_banner_rel, t_event_conversion_path_rel, t_event_keyword_group_rel, t_event_target_rel, t_event_widget_style, t_keyword_group, t_keyword_group_detail, t_concierge, t_conversion_path, t_target_page, t_lead_interest_type, t_talk_linker, t_talk_linker_device, t_ruleset
+
+# 시나리오 톡
+- table: t_scenario, t_scenario_apply, t_scenario_apply_rel, t_scenario_input_preset, t_scenario_map, t_scenario_map_contents, t_scenario_node, t_scenario_node_property, t_scenario_node_rel, t_scenario_node_session, t_scenario_node_session_rel, t_scenario_property, t_scenario_property_info, t_scenario_step
+
+# key_creation
+- table: t_key_creation
+  type: update
+
+# license
+- sql: select * from t_config_property where property_id = 'LICENSE'
+  table: t_config_property
+  type: update
+
+# EER 3.0 이전 pk가 없는 테이블은 실행 전 pk를 생성해야 함.
+# [t_scenario_node_session_rel]
+# DELETE FROM T_SCENARIO_NODE_SESSION_REL
+# ALTER TABLE T_SCENARIO_NODE_SESSION_REL ADD CONSTRAINT PK_SCENARIO_NODE_SESSION_REL PRIMARY KEY (SCENARIO_ID, MAP_TYPE, SESSION_ITEM_ID, REL_SNODE_ID);
+# [t_event_banner_rel]
+# ALTER TABLE T_EVENT_BANNER_REL ADD CONSTRAINT PK_EVENT_BANNER_REL PRIMARY KEY (EVENT_ID, BANNER_ID, BANNER_TYPE);
+# [t_talk_linker_device]
+# ALTER TABLE T_TALK_LINKER_DEVICE ADD CONSTRAINT PK_TALK_LINKER_DEVICE PRIMARY KEY (TALK_LINKER_ID, DISPLAY_DEVICE_TYPE);
