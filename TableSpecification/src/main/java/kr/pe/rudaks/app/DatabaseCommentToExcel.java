@@ -271,10 +271,10 @@ public class DatabaseCommentToExcel
                 map.put("스키마명", "");
                 map.put("테이블명", tableName);
                 map.put("인덱스명", indexName);
+                map.put("인덱스컬럼순서", columnPosition);
                 map.put("인덱스종류", uniqueness);
                 map.put("유니크여부", uniqueFlag);
                 map.put("컬럼명", columnName);
-                map.put("인덱스컬럼순서", columnPosition);
                 map.put("정렬구분", descend);
                 map.put("컬럼길이", columnLength);
                 list.add(map);
@@ -518,10 +518,10 @@ public class DatabaseCommentToExcel
             columnList.add("스키마명");
             columnList.add("테이블명");
             columnList.add("인덱스명");
+            columnList.add("인덱스컬럼순서");
             columnList.add("인덱스종류");
             columnList.add("유니크여부");
             columnList.add("컬럼명");
-            columnList.add("인덱스컬럼순서");
             columnList.add("정렬구분");
             columnList.add("컬럼길이");
         }
@@ -666,13 +666,13 @@ public class DatabaseCommentToExcel
     public String selectTableIndexSql()
     {
         StringBuffer sb = new StringBuffer();
-        sb.append("SELECT B.table_name, B.index_name, A.uniqueness, DECODE(A.uniqueness, 'UNIQUE', 'Y', 'N') AS unique_flag, B.column_name, B.column_position, B.column_length, B.descend ");
+        sb.append("SELECT B.table_name, B.index_name, B.column_position, A.uniqueness, DECODE(A.uniqueness, 'UNIQUE', 'Y', 'N') AS unique_flag, B.column_name, B.column_length, B.descend ");
         sb.append("FROM ALL_INDEXES a, ");
         sb.append("ALL_IND_COLUMNS b ");
         sb.append("WHERE a.index_name = b.index_name ");
         sb.append("AND A.table_owner = ? ");
         //sb.append("AND ROWNUM = 1 ");
-        sb.append("ORDER BY B.table_name, B.column_position ");
+        sb.append("ORDER BY B.table_name, B.index_name, B.column_position ");
         
         return sb.toString();
     }
