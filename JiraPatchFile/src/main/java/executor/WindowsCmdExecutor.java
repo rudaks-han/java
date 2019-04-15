@@ -9,13 +9,13 @@ public class WindowsCmdExecutor implements SystemCmdExecutor
 {
     public String executeSvnLogFile(String revision, String fileUrl, String diffHistoryFileName, String svnLogCmd, String revisionDiffVersion)
     {
-        String command = "cmd /c cd " + System.getProperty("user.dir") + "/temp && " + svnLogCmd + " " + revisionDiffVersion + ":" + revision + " " + fileUrl + " > " + diffHistoryFileName;
+        String command = "cd " + System.getProperty("user.dir") + "/temp && " + svnLogCmd + " " + revisionDiffVersion + ":" + revision + " " + fileUrl + " > " + diffHistoryFileName;
         return executeCommand(command);
     }
 
     public String diffSvnFile(String diffVersion, String fileUrl, String diffFileName, String svnDiffCmd)
     {
-        String command = "cmd /c cd " + System.getProperty("user.dir") + "/temp && " + svnDiffCmd + " -r " + diffVersion + " " + fileUrl + " > " + diffFileName;
+        String command = "cd " + System.getProperty("user.dir") + "/temp && " + svnDiffCmd + " -r " + diffVersion + " " + fileUrl + " > " + diffFileName;
         return executeCommand(command);
     }
 
