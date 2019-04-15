@@ -5,7 +5,7 @@ import util.Util;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-public class LinuxCmd implements SystemCmd
+public class LinuxCmdExecutorExecutor implements SystemCmdExecutor
 {
     public String executeSvnLogFile(String revision, String fileUrl, String diffHistoryFileName, String svnLogCmd, String revisionDiffVersion)
     {

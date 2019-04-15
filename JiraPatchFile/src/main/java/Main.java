@@ -1,20 +1,21 @@
+import executor.LinuxCmd;
+import executor.LinuxCmdExecutorExecutor;
+import executor.SystemCmd;
+import executor.SystemCmdExecutor;
+import executor.WindowsCmd;
+import executor.WindowsCmdExecutor;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.client.utils.DateUtils;
-import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.hssf.util.HSSFColor;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.springframework.http.client.support.BasicAuthorizationInterceptor;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
+import service.JiraService;
+import util.ExcelWriter;
+import util.Util;
 
 import java.io.*;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -22,9 +23,9 @@ import java.util.*;
  */
 public class Main
 {
-    private static String JIRA_URL;
-    private static String JIRA_USER;
-    private static String JIRA_PASSWORD;
+    private String JIRA_URL;
+    private String JIRA_USER;
+    private String JIRA_PASSWORD;
     private static String SVN_URL;
     private static String SVN_LOG_CMD;
     private static String SVN_EXPORT_CMD;
@@ -35,10 +36,25 @@ public class Main
     private static String exportDiffFile;
     private static String revisionDiffVersion;
 
-    private String currDate = DateUtils.formatDate(new Date(), "yyyyMMddHHmmss");
+    JiraService jiraService;
 
-    public static HSSFWorkbook workbook = new HSSFWorkbook();
+    private SystemCmdExecutor systemCmdExecutor;
 
+    public Main()
+    {
+        if ("/".equals(File.separator))
+        {
+            systemCmdExecutor = new LinuxCmdExecutorExecutor();
+        }
+        else
+        {
+            systemCmdExecutor = new WindowsCmdExecutor();
+        }
+
+        loadProperty();
+
+        jiraService = new JiraService(JIRA_URL, JIRA_USER, JIRA_PASSWORD);
+    }
     // 버그 목록
     // http://211.63.24.57:8080/rest/api/2/search?jql=project%20=%20EER%20AND%20issuetype%20=%20%EB%B2%84%EA%B7%B8%20AND%20status%20in%20(Resolved,%20Closed)%20AND%20resolution%20=%20Fixed%20AND%20fixVersion%20=%20%22EER%202.0%22%20AND%20%ED%8C%A8%EC%B9%98%EC%A4%91%EC%9A%94%EB%8F%84%20in%20(%EA%B6%8C%EA%B3%A0,%20%ED%95%84%EC%88%98)
 
@@ -46,7 +62,7 @@ public class Main
     {
         Main obj = new Main();
 
-        obj.loadProperty();
+        //obj.loadProperty();
 
         obj.execute();
     }
@@ -81,7 +97,7 @@ public class Main
             }
             else
             {
-                debug("[error] jira.search.condition 값이 없습니다. 검색조건을 다시 설정하세요.");
+                Util.debug("[error] jira.search.condition 값이 없습니다. 검색조건을 다시 설정하세요.");
                 return;
             }
 
@@ -106,24 +122,20 @@ public class Main
         {
             e.printStackTrace();
 
-            debug(e.getMessage());
+            Util.debug(e.getMessage());
         }
     }
 
     private void execute() throws UnsupportedEncodingException, IOException
     {
+
+
         // jira의 패치목록 가져오기
-        List<HashMap<String, String>> jiraPatchList = getPatchListInJira();
+        List<HashMap<String, String>> jiraPatchList = jiraService.getPatchList(jiraSearchCondition);
 
         if (jiraPatchList != null)
         {
-            // temp, output 디렉토리 삭제
-            FileUtils.deleteDirectory(new File("./temp"));
-            FileUtils.deleteDirectory(new File("./output"));
-
-            // temp, output 디렉토리 만들기
-            FileUtils.forceMkdir(new File("./temp"));
-            FileUtils.forceMkdir(new File("./output"));
+            initWorkingDirectory();
 
             for (HashMap map : jiraPatchList)
             {
@@ -145,7 +157,7 @@ public class Main
                             _revision = _revision.trim();
                             String svnLog = executeSvnLog(_revision);
 
-                            //debug("LOG : " + svnLog);
+                            //Util.debug("LOG : " + svnLog);
 
                             parseSvnLog(map, _revision, svnLog);
                         }
@@ -154,13 +166,29 @@ public class Main
             }
 
             // excel로 목록 만들기
-            createExcel(jiraPatchList);
+            ExcelWriter.write(jiraPatchList, excelFilename);
 
-            debug("\n[ok] " + " Saved to output folder [" + System.getProperty("user.dir") + "/output]");
+            Util.debug("\n[ok] " + " Saved to output folder [" + System.getProperty("user.dir") + "/output]");
         }
     }
 
-    private HashMap<String, Object> searchJiraByJql(String param)
+    private void initWorkingDirectory() throws IOException
+    {
+        // temp, output 디렉토리 삭제
+        FileUtils.deleteDirectory(new File(System.getProperty("user.dir") + "/temp"));
+        FileUtils.deleteDirectory(new File(System.getProperty("user.dir") + "/output"));
+
+        // temp, output 디렉토리 만들기
+        File tempDirectory = new File(System.getProperty("user.dir") + "/temp");
+        File outputDirectory = new File(System.getProperty("user.dir") + "/output");
+
+        if (!tempDirectory.exists())
+            FileUtils.forceMkdir(new File(System.getProperty("user.dir") + "/temp"));
+        if (!outputDirectory.exists())
+            FileUtils.forceMkdir(new File(System.getProperty("user.dir") + "/output"));
+    }
+
+    /*private HashMap<String, Object> searchJiraByJql(String param)
     {
         HashMap resultMap = null;
 
@@ -170,16 +198,15 @@ public class Main
             restTemplate.setMessageConverters(getMessageConverters());
             restTemplate.getInterceptors().add(new BasicAuthorizationInterceptor(JIRA_USER, JIRA_PASSWORD));
 
-
             URI uri = new URI(JIRA_URL + "/rest/api/2/search?jql=" + param);
-            debug("[condition] " + uri.getQuery());
+            Util.debug("[condition] " + uri.getQuery());
 
             resultMap = restTemplate.getForObject(uri, HashMap.class);
         }
         catch (URISyntaxException e)
         {
             e.printStackTrace();
-            debug(e.getMessage());
+            Util.debug(e.getMessage());
         }
 
         return resultMap;
@@ -192,7 +219,7 @@ public class Main
         if (map != null)
         {
             ArrayList<HashMap> issues = (ArrayList<HashMap>) map.get("issues");
-            debug("[issue count] " + issues.size() + "");
+            Util.debug("[issue count] " + issues.size() + "");
 
             for (HashMap issueMap : issues)
             {
@@ -217,7 +244,7 @@ public class Main
                 String responseHistory = (String) fields.get("customfield_10021"); // 처리내역
                 String description = (String) fields.get("description"); // description
 
-                /*
+                *//*
                 System.err.println("==============================================================");
                 System.err.println("key : " + key);
                 System.err.println("summary : " + summary);
@@ -228,7 +255,7 @@ public class Main
                 System.err.println("responseHistory : " + responseHistory);
                 //System.err.println("description : " + description);
                 System.err.println("==============================================================");
-                */
+                *//*
 
                 resultMap.put("key", key);
                 resultMap.put("summary", summary);
@@ -263,7 +290,7 @@ public class Main
         }
 
         return resultList;
-    }
+    }*/
 
     private void parseSvnLog(HashMap<String, String> map, String revision, String svnLog)
     {
@@ -305,10 +332,11 @@ public class Main
                         try
                         {
                             // src copy
-                            String src = "./temp/" + fileName;
-                            String dest = "./output/" + jiraId + "/" + filePath;
+                            String src = System.getProperty("user.dir") + "/temp/" + fileName;
+                            String dest = System.getProperty("user.dir") + "/output/" + jiraId + "/" + filePath;
 
-                            debug("[cmd] src copy " + src + " to " + dest + "\n");
+
+                            Util.debug("[executor] src copy " + src + " to " + dest + "\n");
                             FileUtils.copyFile(new File(src), new File(dest));
                             FileUtils.forceDelete(new File(src));
 
@@ -316,25 +344,25 @@ public class Main
                             {
                                 // diff file copy
                                 String diffFileName = fileName + ".rev." + revisionDiffVersion + "-" + revision + ".diff";
-                                diffSvnFile(revisionDiffVersion, SVN_URL + filePath, diffFileName);
+                                systemCmd.diffSvnFile(revisionDiffVersion, SVN_URL + filePath, diffFileName, SVN_DIFF_CMD);
 
-                                src = "./temp/" + diffFileName;
-                                dest = "./output/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
+                                src = System.getProperty("user.dir") + "/temp/" + diffFileName;
+                                dest = System.getProperty("user.dir") + "/output/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
                                                 + "/" + diffFileName;
 
-                                debug("[cmd] diff copy " + src + " to " + dest + "\n");
+                                Util.debug("[executor] diff copy " + src + " to " + dest + "\n");
                                 FileUtils.copyFile(new File(src), new File(dest));
                                 FileUtils.forceDelete(new File(src));
 
                                 // svn log history (시작 revision부터 변경 revision까지 변경사항)
                                 String diffHistoryFileName = fileName + ".rev." + revisionDiffVersion + "-" + revision + ".diff-history.log";
-                                executeSvnLogFile(revision, SVN_URL + filePath, diffHistoryFileName);
+                                systemCmd.executeSvnLogFile(revision, SVN_URL + filePath, diffHistoryFileName, SVN_LOG_CMD, revisionDiffVersion);
 
-                                src = "./temp/" + diffHistoryFileName;
-                                dest = "./output/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
+                                src = System.getProperty("user.dir") + "/temp/" + diffHistoryFileName;
+                                dest = System.getProperty("user.dir") + "/output/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
                                                 + "/" + diffHistoryFileName;
 
-                                debug("[cmd] diff history copy " + src + " to " + dest + "\n");
+                                Util.debug("[executor] diff history copy " + src + " to " + dest + "\n");
                                 FileUtils.copyFile(new File(src), new File(dest));
                                 FileUtils.forceDelete(new File(src));
                             }
@@ -342,7 +370,7 @@ public class Main
                         catch (Exception e)
                         {
                             e.printStackTrace();
-                            debug(e.getMessage());
+                            Util.debug(e.getMessage());
                         }
                     }
                 }
@@ -353,7 +381,7 @@ public class Main
         catch (Exception e)
         {
             e.printStackTrace();
-            debug(e.getMessage());
+            Util.debug(e.getMessage());
         }
         //exportSvnFile(revision, "");
     }
@@ -361,28 +389,27 @@ public class Main
     private String executeSvnLog(String revision)
     {
         String command = SVN_LOG_CMD + " " + revision + " " + SVN_URL;
-        return executeCommand(command);
+        return systemCmd.executeCommand(command);
     }
 
-    private String executeSvnLogFile(String revision, String fileUrl, String diffHistoryFileName)
-    {
-        String command = "cmd /c cd " + System.getProperty("user.dir") + "/temp && " + SVN_LOG_CMD + " " + revisionDiffVersion + ":" + revision + " " + fileUrl + " > " + diffHistoryFileName;
-        return executeCommand(command);
-    }
+    //
+
 
     private String exportSvnFile(String revision, String fileUrl)
     {
-        String command = SVN_EXPORT_CMD + " -r " + revision + " " + fileUrl + " ./temp";
-        return executeCommand(command);
+        String filename = fileUrl.substring(fileUrl.lastIndexOf("/")+1);
+        String command = "cd " + System.getProperty("user.dir") + "/temp && cd .. && cd - && " + SVN_EXPORT_CMD + " -r " + revision + " " + fileUrl + " " + " " + filename;
+        return systemCmd.executeCommand(command);
     }
 
-    private String diffSvnFile(String diffVersion, String fileUrl, String diffFileName)
+    //
+    /*private String diffSvnFile(String diffVersion, String fileUrl, String diffFileName)
     {
         //String command = SVN_DIFF_CMD + " -r " + diffVersion + " " + fileUrl;
-        String command = "cmd /c cd " + System.getProperty("user.dir") + "/temp && " + SVN_DIFF_CMD + " -r " + diffVersion + " " + fileUrl + " > " + diffFileName;
-        return executeCommand(command);
+        String command = "executor /c cd " + System.getProperty("user.dir") + "/temp && " + SVN_DIFF_CMD + " -r " + diffVersion + " " + fileUrl + " > " + diffFileName;
+        return Util.executeCommand(command);
     }
-
+*/
     private List<HttpMessageConverter<?>> getMessageConverters() {
         List<HttpMessageConverter<?>> converters =
                         new ArrayList<HttpMessageConverter<?>>();
@@ -399,31 +426,9 @@ public class Main
         executor.execute(cmdLine);
     }
 
-    private String executeCommand(String command) {
-        StringBuffer output = new StringBuffer();
 
-        Process p;
-        try
-        {
-            debug("[cmd] " + command);
-            p = Runtime.getRuntime().exec(command);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), "MS949"));
 
-            String line = "";
-            while ((line = reader.readLine())!= null)
-            {
-                output.append(line + "\n");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            debug(e.getMessage());
-        }
-
-        return output.toString();
-    }
-
-    public void createExcel(List<HashMap<String, String>> list)
+    /*public void createExcel(List<HashMap<String, String>> list)
     {
         ArrayList<String> columnList = new ArrayList<String>();
 
@@ -567,30 +572,18 @@ public class Main
 
         try
         {
-            debug("[save as excel] " + "./output/" + excelFilename);
-            FileOutputStream fos = new FileOutputStream("./output/" + excelFilename);
+            Util.debug("[save as excel] " + System.getProperty("user.dir") + "/output/" + excelFilename);
+            FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/output/" + excelFilename);
             workbook.write(fos);
             fos.close();
         }
         catch (IOException e)
         {
             e.printStackTrace();
-            debug(e.getMessage());
+            Util.debug(e.getMessage());
         }
 
-    }
+    }*/
 
-    private void debug(String str)
-    {
-        System.err.println(str);
 
-        try
-        {
-            FileUtils.writeStringToFile(new File(System.getProperty("user.dir") + "/logs/data_" + currDate + ".log"), str, true);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
 }

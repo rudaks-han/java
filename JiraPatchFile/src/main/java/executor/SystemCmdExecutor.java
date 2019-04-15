@@ -1,6 +1,6 @@
 package executor;
 
-public interface SystemCmd
+public interface SystemCmdExecutor
 {
     String executeSvnLogFile(String revision, String fileUrl, String diffHistoryFileName, String svnLogCmd, String revisionDiffVersion);
 
