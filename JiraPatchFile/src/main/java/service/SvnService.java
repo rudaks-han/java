@@ -16,12 +16,17 @@ public class SvnService
     private String svnExportCmd = "svn export";
     private String svnDiffCmd = "svn diff";
 
+    private String tempDir;
+    private String outputDir;
+
     private SystemCmdExecutor systemCmdExecutor;
 
-    public SvnService(String svnUrl, SystemCmdExecutor systemCmdExecutor)
+    public SvnService(String svnUrl, SystemCmdExecutor systemCmdExecutor, String tempDir, String outputDir)
     {
         this.systemCmdExecutor = systemCmdExecutor;
         this.svnUrl = svnUrl;
+        this.tempDir = tempDir;
+        this.outputDir = outputDir;
     }
 
     public void executeSvnLogAndParse(List<HashMap<String, String>> jiraPatchList, String exportDiffFile, String revisionDiffVersion)
@@ -100,8 +105,9 @@ public class SvnService
                         try
                         {
                             // src copy
-                            String src = System.getProperty("user.dir") + "/temp/" + fileName;
-                            String dest = System.getProperty("user.dir") + "/output/" + jiraId + "/" + filePath;
+                            String src = tempDir + "/" + fileName;
+                            String dest = outputDir + "/" + jiraId + "/" + filePath;
+
 
 
                             Util.debug("[executor] src copy " + src + " to " + dest + "\n");
@@ -114,8 +120,8 @@ public class SvnService
                                 String diffFileName = fileName + ".rev." + revisionDiffVersion + "-" + revision + ".diff";
                                 systemCmdExecutor.diffSvnFile(revisionDiffVersion, svnUrl + filePath, diffFileName, svnDiffCmd);
 
-                                src = System.getProperty("user.dir") + "/temp/" + diffFileName;
-                                dest = System.getProperty("user.dir") + "/output/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
+                                src = tempDir + "/" + diffFileName;
+                                dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
                                         + "/" + diffFileName;
 
                                 Util.debug("[executor] diff copy " + src + " to " + dest + "\n");
@@ -126,8 +132,8 @@ public class SvnService
                                 String diffHistoryFileName = fileName + ".rev." + revisionDiffVersion + "-" + revision + ".diff-history.log";
                                 systemCmdExecutor.executeSvnLogFile(revision, svnUrl + filePath, diffHistoryFileName, svnLogCmd, revisionDiffVersion);
 
-                                src = System.getProperty("user.dir") + "/temp/" + diffHistoryFileName;
-                                dest = System.getProperty("user.dir") + "/output/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
+                                src = tempDir + "/" + diffHistoryFileName;
+                                dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
                                         + "/" + diffHistoryFileName;
 
                                 Util.debug("[executor] diff history copy " + src + " to " + dest + "\n");
@@ -157,7 +163,7 @@ public class SvnService
     private String exportSvnFile(String revision, String fileUrl)
     {
         String filename = fileUrl.substring(fileUrl.lastIndexOf("/")+1);
-        String command = "cd " + System.getProperty("user.dir") + "/temp && " + svnExportCmd + " -r " + revision + " " + fileUrl + " " + " " + filename;
+        String command = "cd " + tempDir + " && " + svnExportCmd + " -r " + revision + " " + fileUrl + " " + " " + filename;
         return systemCmdExecutor.executeCommand(command);
     }
 }
