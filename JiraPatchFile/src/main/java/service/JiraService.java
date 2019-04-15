@@ -20,20 +20,20 @@ public class JiraService
     private String user;
     private String password;
 
+    private String jiraSearchUrl;
+
     public JiraService(String jiraUrl, String user, String password)
     {
         this.jiraUrl = jiraUrl;
         this.user = user;
         this.password = password;
+
+        jiraSearchUrl = jiraUrl + "/rest/api/2/search";
     }
 
     public List<HashMap<String, String>> getPatchList(String searchCondition) throws UnsupportedEncodingException
     {
         List resultList = null;
-        // http://211.63.24.57:8080/rest/api/2/search?jql=project = EER AND issuetype = 버그 AND status in (Resolved, Closed) AND resolution = Fixed AND fixVersion = "EER 2.0" AND 패치중요도 in (권고, 필수)
-        // http://211.63.24.57:8080/rest/api/2/issue/EER-4222
-
-        //String param = "project = EER AND issuetype = 버그 AND status in (Resolved, Closed) AND resolution = Fixed AND fixVersion = \"EER 2.0\" AND 패치중요도 in (권고, 필수)";
         String param = URLEncoder.encode(searchCondition, "UTF-8");
 
         HashMap<String, Object> resultMap = searchJiraByJql(param);
@@ -56,7 +56,7 @@ public class JiraService
             restTemplate.setMessageConverters(getMessageConverters());
             restTemplate.getInterceptors().add(new BasicAuthorizationInterceptor(user, password));
 
-            URI uri = new URI(jiraUrl + "/rest/api/2/search?jql=" + param);
+            URI uri = new URI(jiraSearchUrl + "?jql=" + param);
             Util.debug("[condition] " + uri.getQuery());
 
             resultMap = restTemplate.getForObject(uri, HashMap.class);

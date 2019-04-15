@@ -1,6 +1,4 @@
-import executor.LinuxCmdExecutorExecutor;
 import executor.SystemCmdExecutor;
-import executor.WindowsCmdExecutor;
 import executor.factory.SystemCmdFactory;
 import org.apache.commons.io.FileUtils;
 import service.JiraService;
@@ -9,7 +7,6 @@ import util.ExcelWriter;
 import util.Util;
 
 import java.io.*;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -19,10 +16,10 @@ import java.util.Properties;
  */
 public class Main
 {
-    private String JIRA_URL;
-    private String JIRA_USER;
-    private String JIRA_PASSWORD;
-    private String SVN_URL;
+    private String jiraUrl;
+    private String jiraUser;
+    private String jiraPassword;
+    private String svnUrl;
 
     private static String jiraSearchCondition;
     private static String excelFilename;
@@ -39,18 +36,18 @@ public class Main
 
     public Main()
     {
+        tempDir = System.getProperty("user.dir") + "/temp";
+        outputDir = System.getProperty("user.dir") + "/output";
+
         systemCmdExecutor = SystemCmdFactory.getInstance();
 
         loadProperty();
 
-        tempDir = System.getProperty("user.dir") + "/temp";
-        outputDir = System.getProperty("user.dir") + "/output";
-
-        jiraService = new JiraService(JIRA_URL, JIRA_USER, JIRA_PASSWORD);
-        svnService = new SvnService(SVN_URL, systemCmdExecutor, tempDir, outputDir);
+        jiraService = new JiraService(jiraUrl, jiraUser, jiraPassword);
+        svnService = new SvnService(svnUrl, systemCmdExecutor, tempDir, outputDir);
     }
 
-    public static void main(String [] args) throws URISyntaxException, IOException
+    public static void main(String [] args) throws IOException
     {
         Main obj = new Main();
         obj.execute();
@@ -79,36 +76,25 @@ public class Main
                     fi.close();
             }
 
-            jiraSearchCondition = prop.getProperty("jira.search.condition");
-            if (jiraSearchCondition != null && jiraSearchCondition.length() > 0)
-            {
-                jiraSearchCondition = new String(jiraSearchCondition.getBytes("8859_1"), "UTF-8");
-            }
-            else
+            jiraSearchCondition = Util.readString(prop.getProperty("jira.search.condition"));
+            if (jiraSearchCondition == null)
             {
                 Util.debug("[error] jira.search.condition 값이 없습니다. 검색조건을 다시 설정하세요.");
                 return;
             }
 
-            excelFilename = prop.getProperty("excel.filename");
-            if (excelFilename != null && excelFilename.length() > 0)
-            {
-                excelFilename = new String(excelFilename.getBytes("8859_1"), "UTF-8");
-            }
-
+            excelFilename = Util.readString(prop.getProperty("excel.filename"));
             exportDiffFile = prop.getProperty("export.diff.file");
             revisionDiffVersion = prop.getProperty("revision.diff.version");
 
-            JIRA_URL = prop.getProperty("jira.url");
-            JIRA_USER = prop.getProperty("jira.user");
-            JIRA_PASSWORD = prop.getProperty("jira.password");
-            SVN_URL = prop.getProperty("svn.url");
+            jiraUrl = prop.getProperty("jira.url");
+            jiraUser = prop.getProperty("jira.user");
+            jiraPassword = prop.getProperty("jira.password");
+            svnUrl = prop.getProperty("svn.url");
         }
         catch (Exception e)
         {
             e.printStackTrace();
-
-            Util.debug(e.getMessage());
         }
     }
 

@@ -3,10 +3,7 @@ package util;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.DateUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Date;
 
 public class Util
@@ -61,5 +58,33 @@ public class Util
     public static String currDate()
     {
         return DateUtils.formatDate(new Date(), "yyyyMMddHHmmss");
+    }
+
+    public static String readString(String str)
+    {
+        return readString(str, "8859_1", "UTF-8");
+    }
+
+    public static String readString(String str, String sourceEncoding, String targetEncoding)
+    {
+        String result = null;
+
+        try
+        {
+            if (str != null && str.length() > 0)
+            {
+                result = new String(str.getBytes(sourceEncoding), targetEncoding);
+            }
+            else
+            {
+                Util.debug("[error] " + str + " is null.");
+            }
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            e.printStackTrace();
+        }
+
+        return result;
     }
 }

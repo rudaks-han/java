@@ -108,9 +108,7 @@ public class SvnService
                             String src = tempDir + "/" + fileName;
                             String dest = outputDir + "/" + jiraId + "/" + filePath;
 
-
-
-                            Util.debug("[executor] src copy " + src + " to " + dest + "\n");
+                            Util.debug("[copy] src copy " + src + " to " + dest + "\n");
                             FileUtils.copyFile(new File(src), new File(dest));
                             FileUtils.forceDelete(new File(src));
 
@@ -124,7 +122,7 @@ public class SvnService
                                 dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
                                         + "/" + diffFileName;
 
-                                Util.debug("[executor] diff copy " + src + " to " + dest + "\n");
+                                Util.debug("[copy] diff copy " + src + " to " + dest + "\n");
                                 FileUtils.copyFile(new File(src), new File(dest));
                                 FileUtils.forceDelete(new File(src));
 
@@ -136,7 +134,7 @@ public class SvnService
                                 dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
                                         + "/" + diffHistoryFileName;
 
-                                Util.debug("[executor] diff history copy " + src + " to " + dest + "\n");
+                                Util.debug("[copy] diff history copy " + src + " to " + dest + "\n");
                                 FileUtils.copyFile(new File(src), new File(dest));
                                 FileUtils.forceDelete(new File(src));
                             }
