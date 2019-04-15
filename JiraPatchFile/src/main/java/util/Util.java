@@ -11,15 +11,22 @@ import java.util.Date;
 
 public class Util
 {
-    public static String executeCommand(String command)
+    public static String executeCommand(String [] commands)
     {
         StringBuffer output = new StringBuffer();
 
         Process p;
         try
         {
-            debug("[executor] " + command);
-            String [] commands = {"bash", "-c", command};
+            String str = "";
+            for (String command : commands)
+            {
+                if (str.length() > 0)
+                    str += " ";
+                str += command;
+            }
+            debug("[executor] " + str);
+            //String [] commands = {"bash", "-c", command};
             p = Runtime.getRuntime().exec(commands);
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), "MS949"));
 
@@ -40,7 +47,7 @@ public class Util
 
     public static void debug(String str)
     {
-        System.err.println(str);
+        System.out.println(str);
 
         try
         {

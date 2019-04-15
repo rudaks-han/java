@@ -10,19 +10,22 @@ public class LinuxCmdExecutorExecutor implements SystemCmdExecutor
     public String executeSvnLogFile(String revision, String fileUrl, String diffHistoryFileName, String svnLogCmd, String revisionDiffVersion)
     {
         String command = "cd " + System.getProperty("user.dir") + "/temp && " + svnLogCmd + " " + revisionDiffVersion + ":" + revision + " " + fileUrl + " > " + diffHistoryFileName;
-        return Util.executeCommand(command);
+        return executeCommand(command);
     }
 
     public String diffSvnFile(String diffVersion, String fileUrl, String diffFileName, String svnDiffCmd)
     {
         //String command = SVN_DIFF_CMD + " -r " + diffVersion + " " + fileUrl;
         String command = "cd " + System.getProperty("user.dir") + "/temp && " + svnDiffCmd + " -r " + diffVersion + " " + fileUrl + " > " + diffFileName;
-        return Util.executeCommand(command);
+        return executeCommand(command);
     }
 
     public String executeCommand(String command)
     {
-        StringBuffer output = new StringBuffer();
+        String [] commands = {"bash", "-c", command};
+        return Util.executeCommand(commands);
+
+        /*StringBuffer output = new StringBuffer();
 
         Process p;
         try
@@ -43,6 +46,6 @@ public class LinuxCmdExecutorExecutor implements SystemCmdExecutor
             Util.debug(e.getMessage());
         }
 
-        return output.toString();
+        return output.toString();*/
     }
 }

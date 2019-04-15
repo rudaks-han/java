@@ -1,22 +1,18 @@
-import executor.LinuxCmd;
 import executor.LinuxCmdExecutorExecutor;
-import executor.SystemCmd;
 import executor.SystemCmdExecutor;
-import executor.WindowsCmd;
 import executor.WindowsCmdExecutor;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
+import executor.factory.SystemCmdFactory;
 import org.apache.commons.io.FileUtils;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.util.StringUtils;
 import service.JiraService;
+import service.SvnService;
 import util.ExcelWriter;
 import util.Util;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Created by kmhan on 2017-08-21.
@@ -26,10 +22,10 @@ public class Main
     private String JIRA_URL;
     private String JIRA_USER;
     private String JIRA_PASSWORD;
-    private static String SVN_URL;
-    private static String SVN_LOG_CMD;
+    private String SVN_URL;
+    /*private static String SVN_LOG_CMD;
     private static String SVN_EXPORT_CMD;
-    private static String SVN_DIFF_CMD;
+    private static String SVN_DIFF_CMD;*/
 
     private static String jiraSearchCondition;
     private static String excelFilename;
@@ -37,33 +33,23 @@ public class Main
     private static String revisionDiffVersion;
 
     JiraService jiraService;
+    SvnService svnService;
 
     private SystemCmdExecutor systemCmdExecutor;
 
     public Main()
     {
-        if ("/".equals(File.separator))
-        {
-            systemCmdExecutor = new LinuxCmdExecutorExecutor();
-        }
-        else
-        {
-            systemCmdExecutor = new WindowsCmdExecutor();
-        }
+        systemCmdExecutor = SystemCmdFactory.getInstance();
 
         loadProperty();
 
         jiraService = new JiraService(JIRA_URL, JIRA_USER, JIRA_PASSWORD);
+        svnService = new SvnService(SVN_URL, systemCmdExecutor);
     }
-    // 버그 목록
-    // http://211.63.24.57:8080/rest/api/2/search?jql=project%20=%20EER%20AND%20issuetype%20=%20%EB%B2%84%EA%B7%B8%20AND%20status%20in%20(Resolved,%20Closed)%20AND%20resolution%20=%20Fixed%20AND%20fixVersion%20=%20%22EER%202.0%22%20AND%20%ED%8C%A8%EC%B9%98%EC%A4%91%EC%9A%94%EB%8F%84%20in%20(%EA%B6%8C%EA%B3%A0,%20%ED%95%84%EC%88%98)
 
     public static void main(String [] args) throws URISyntaxException, IOException
     {
         Main obj = new Main();
-
-        //obj.loadProperty();
-
         obj.execute();
     }
 
@@ -114,9 +100,9 @@ public class Main
             JIRA_USER = prop.getProperty("jira.user");
             JIRA_PASSWORD = prop.getProperty("jira.password");
             SVN_URL = prop.getProperty("svn.url");
-            SVN_LOG_CMD = prop.getProperty("svn.log.cmd");
+            /*SVN_LOG_CMD = prop.getProperty("svn.log.cmd");
             SVN_EXPORT_CMD = prop.getProperty("svn.export.cmd");
-            SVN_DIFF_CMD = prop.getProperty("svn.diff.cmd");
+            SVN_DIFF_CMD = prop.getProperty("svn.diff.cmd");*/
         }
         catch (Exception e)
         {
@@ -128,8 +114,6 @@ public class Main
 
     private void execute() throws UnsupportedEncodingException, IOException
     {
-
-
         // jira의 패치목록 가져오기
         List<HashMap<String, String>> jiraPatchList = jiraService.getPatchList(jiraSearchCondition);
 
@@ -137,15 +121,18 @@ public class Main
         {
             initWorkingDirectory();
 
-            for (HashMap map : jiraPatchList)
+            svnService.executeSvnLogAndParse(jiraPatchList, exportDiffFile, revisionDiffVersion);
+
+            /*for (HashMap map : jiraPatchList)
             {
-                String key = (String) map.get("key"); // EER-1234
                 String revision = (String) map.get("revision"); // Jira의 SVN Rev.No
+
+                *//*String key = (String) map.get("key"); // EER-1234
                 String priority = (String) map.get("priority");
                 String patchImportance = (String) map.get("patchImportance");
                 String menu = (String) map.get("menu");
                 String responseHistory = (String) map.get("responseHistory");
-                String description = (String) map.get("description");
+                String description = (String) map.get("description");*//*
 
                 if (revision != null && revision.length() > 0)
                 {
@@ -157,13 +144,11 @@ public class Main
                             _revision = _revision.trim();
                             String svnLog = executeSvnLog(_revision);
 
-                            //Util.debug("LOG : " + svnLog);
-
                             parseSvnLog(map, _revision, svnLog);
                         }
                     }
                 }
-            }
+            }*/
 
             // excel로 목록 만들기
             ExcelWriter.write(jiraPatchList, excelFilename);
@@ -292,7 +277,7 @@ public class Main
         return resultList;
     }*/
 
-    private void parseSvnLog(HashMap<String, String> map, String revision, String svnLog)
+    /*private void parseSvnLog(HashMap<String, String> map, String revision, String svnLog)
     {
         try
         {
@@ -384,23 +369,23 @@ public class Main
             Util.debug(e.getMessage());
         }
         //exportSvnFile(revision, "");
-    }
+    }*/
 
-    private String executeSvnLog(String revision)
+    /*private String executeSvnLog(String revision)
     {
         String command = SVN_LOG_CMD + " " + revision + " " + SVN_URL;
         return systemCmd.executeCommand(command);
-    }
+    }*/
 
     //
 
 
-    private String exportSvnFile(String revision, String fileUrl)
+    /*private String exportSvnFile(String revision, String fileUrl)
     {
         String filename = fileUrl.substring(fileUrl.lastIndexOf("/")+1);
         String command = "cd " + System.getProperty("user.dir") + "/temp && cd .. && cd - && " + SVN_EXPORT_CMD + " -r " + revision + " " + fileUrl + " " + " " + filename;
         return systemCmd.executeCommand(command);
-    }
+    }*/
 
     //
     /*private String diffSvnFile(String diffVersion, String fileUrl, String diffFileName)
@@ -410,7 +395,7 @@ public class Main
         return Util.executeCommand(command);
     }
 */
-    private List<HttpMessageConverter<?>> getMessageConverters() {
+    /*private List<HttpMessageConverter<?>> getMessageConverters() {
         List<HttpMessageConverter<?>> converters =
                         new ArrayList<HttpMessageConverter<?>>();
         converters.add(new MappingJackson2HttpMessageConverter());
@@ -424,7 +409,7 @@ public class Main
             cmdLine.addArgument(command[i]);
         }
         executor.execute(cmdLine);
-    }
+    }*/
 
 
 
