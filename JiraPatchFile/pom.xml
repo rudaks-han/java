@@ -90,7 +90,8 @@
                                     <directory>.</directory>
                                     <includes>
                                         <include>run.bat</include>
-                                        <include>readme.txt</include>
+                                        <include>run.sh</include>
+                                        <include>readme.md</include>
                                     </includes>
                                 </resource>
                                 <resource>

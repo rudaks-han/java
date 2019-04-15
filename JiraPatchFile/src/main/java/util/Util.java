@@ -25,8 +25,7 @@ public class Util
                     str += " ";
                 str += command;
             }
-            debug("[executor] " + str);
-            //String [] commands = {"bash", "-c", command};
+            debug("[cmd] " + str);
             p = Runtime.getRuntime().exec(commands);
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), "MS949"));
 

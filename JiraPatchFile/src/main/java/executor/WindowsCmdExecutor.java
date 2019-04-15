@@ -21,7 +21,7 @@ public class WindowsCmdExecutor implements SystemCmdExecutor
 
     public String executeCommand(String command)
     {
-        String [] commands = {"bash", "-c", command};
+        String [] commands = {command};
         return Util.executeCommand(commands);
     }
 }
