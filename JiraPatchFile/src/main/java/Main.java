@@ -1,15 +1,14 @@
+import excel.model.Column;
 import executor.SystemCmdExecutor;
 import executor.factory.SystemCmdFactory;
 import org.apache.commons.io.FileUtils;
 import service.JiraService;
 import service.SvnService;
-import util.ExcelWriter;
+import excel.ExcelWriter;
 import util.Util;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by kmhan on 2017-08-21.
@@ -109,11 +108,29 @@ public class Main
 
             svnService.executeSvnLogAndParse(jiraPatchList, exportDiffFile, revisionDiffVersion);
 
-            // excel로 목록 만들기
-            ExcelWriter.write(jiraPatchList, excelFilename);
+            List<Column> columnList = getColumnList();
+            ExcelWriter excelWriter = new ExcelWriter("패치목록", columnList, jiraPatchList);
+            excelWriter.write(excelFilename);
 
-            Util.debug("\n[ok] " + " Saved to output folder [" + tempDir + "]");
+            Util.debug("\n[ok] " + " Saved to output folder [" + tempDir + "/" + excelFilename + "]");
         }
+    }
+
+    public List<Column> getColumnList()
+    {
+        List<Column> columnList = new ArrayList<Column>();
+
+        columnList.add(new Column("key", "Key", true, 0));
+        columnList.add(new Column("summary", "Summary", false, 2800*3));
+        columnList.add(new Column("priority", "Priority", false, 512));
+        columnList.add(new Column("patchImportance", "패치중요도", false, 512));
+        columnList.add(new Column("menu", "메뉴", false, 2800*4));
+        columnList.add(new Column("revision", "SVN Rev.No", false, 512));
+        columnList.add(new Column("responseHistory", "처리내역", false, 2800*5));
+        columnList.add(new Column("description", "Description", false, 2800*5));
+        columnList.add(new Column("patchFileList", "패치 파일 리스트", false, 2800*6));
+
+        return columnList;
     }
 
     private void initWorkingDirectory() throws IOException

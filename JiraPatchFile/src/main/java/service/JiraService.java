@@ -10,9 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class JiraService
 {
@@ -36,7 +34,7 @@ public class JiraService
         List resultList = null;
         String param = URLEncoder.encode(searchCondition, "UTF-8");
 
-        HashMap<String, Object> resultMap = searchJiraByJql(param);
+        Map<String, Object> resultMap = searchJiraByJql(param);
 
         if (resultMap != null)
         {
@@ -46,9 +44,9 @@ public class JiraService
         return resultList;
     }
 
-    public HashMap<String, Object> searchJiraByJql(String param)
+    public Map<String, Object> searchJiraByJql(String param)
     {
-        HashMap resultMap = null;
+        Map resultMap = null;
 
         try
         {
@@ -59,7 +57,7 @@ public class JiraService
             URI uri = new URI(jiraSearchUrl + "?jql=" + param);
             Util.debug("[condition] " + uri.getQuery());
 
-            resultMap = restTemplate.getForObject(uri, HashMap.class);
+            resultMap = restTemplate.getForObject(uri, LinkedHashMap.class);
         }
         catch (URISyntaxException e)
         {
@@ -70,9 +68,9 @@ public class JiraService
         return resultMap;
     }
 
-    private List parseJiraSearchMap(HashMap map)
+    private List parseJiraSearchMap(Map map)
     {
-        List<HashMap<String, String>> resultList = new ArrayList<HashMap<String, String>>();
+        List<LinkedHashMap<String, String>> resultList = new ArrayList<LinkedHashMap<String, String>>();
 
         if (map != null)
         {
@@ -81,7 +79,7 @@ public class JiraService
 
             for (HashMap issueMap : issues)
             {
-                HashMap<String, String> resultMap = new HashMap<String, String>();
+                LinkedHashMap<String, String> resultMap = new LinkedHashMap<String, String>();
 
                 String key = (String) issueMap.get("key");
                 HashMap<String, Object> fields = (HashMap<String, Object>) issueMap.get("fields");
