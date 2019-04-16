@@ -102,18 +102,20 @@ public class Main
         // jira의 패치목록 가져오기
         List<HashMap<String, String>> jiraPatchList = jiraService.getPatchList(jiraSearchCondition);
 
-        if (jiraPatchList != null)
+        if (jiraPatchList == null)
         {
-            initWorkingDirectory();
-
-            svnService.executeSvnLogAndParse(jiraPatchList, exportDiffFile, revisionDiffVersion);
-
-            List<Column> columnList = getColumnList();
-            ExcelWriter excelWriter = new ExcelWriter("패치목록", columnList, jiraPatchList);
-            excelWriter.write(excelFilename);
-
-            Util.debug("\n[ok] " + " Saved to output folder [" + tempDir + "/" + excelFilename + "]");
+            Util.debug("jiraPathList is null.");
         }
+
+        initWorkingDirectory();
+
+        svnService.executeSvnLogAndParse(jiraPatchList, exportDiffFile, revisionDiffVersion);
+
+        List<Column> columnList = getColumnList();
+        ExcelWriter excelWriter = new ExcelWriter("패치목록", columnList, jiraPatchList);
+        excelWriter.write(excelFilename);
+
+        Util.debug("\n[ok] " + " Saved to output folder [" + tempDir + "/" + excelFilename + "]");
     }
 
     public List<Column> getColumnList()
