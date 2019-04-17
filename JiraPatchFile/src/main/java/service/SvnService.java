@@ -1,6 +1,7 @@
 package service;
 
 import executor.SystemCmdExecutor;
+import executor.factory.SystemCmdFactory;
 import org.apache.commons.io.FileUtils;
 import org.springframework.util.StringUtils;
 import util.Util;
@@ -21,9 +22,9 @@ public class SvnService
 
     private SystemCmdExecutor systemCmdExecutor;
 
-    public SvnService(String svnUrl, SystemCmdExecutor systemCmdExecutor, String tempDir, String outputDir)
+    public SvnService(String svnUrl, String tempDir, String outputDir)
     {
-        this.systemCmdExecutor = systemCmdExecutor;
+        this.systemCmdExecutor = SystemCmdFactory.getInstance();
         this.svnUrl = svnUrl;
         this.tempDir = tempDir;
         this.outputDir = outputDir;

@@ -28,22 +28,18 @@ public class Main
     JiraService jiraService;
     SvnService svnService;
 
-    private SystemCmdExecutor systemCmdExecutor;
-
     private String tempDir;
     private String outputDir;
 
     public Main()
     {
+        loadProperty();
+
         tempDir = System.getProperty("user.dir") + "/temp";
         outputDir = System.getProperty("user.dir") + "/output";
 
-        systemCmdExecutor = SystemCmdFactory.getInstance();
-
-        loadProperty();
-
         jiraService = new JiraService(jiraUrl, jiraUser, jiraPassword);
-        svnService = new SvnService(svnUrl, systemCmdExecutor, tempDir, outputDir);
+        svnService = new SvnService(svnUrl, tempDir, outputDir);
     }
 
     public static void main(String [] args) throws IOException
