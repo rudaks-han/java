@@ -92,6 +92,7 @@
                                         <include>run.bat</include>
                                         <include>run.sh</include>
                                         <include>readme.md</include>
+                                        <include>build.info</include>
                                     </includes>
                                 </resource>
                                 <resource>
@@ -173,6 +174,25 @@
             </plugin>
 
 
+            <!-- Generate build.info -->
+            <plugin>
+                <groupId>com.rodiontsev.maven.plugins</groupId>
+                <artifactId>build-info-maven-plugin</artifactId>
+                <version>1.2</version>
+                <configuration>
+                    <filename>build.info</filename>
+                    <dateTimePattern>yyyy-MM-dd HH:mm:ss</dateTimePattern>
+                    <includeVcsInfo>true</includeVcsInfo>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>extract</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

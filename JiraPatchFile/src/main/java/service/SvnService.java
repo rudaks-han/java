@@ -30,18 +30,18 @@ public class SvnService
         this.outputDir = outputDir;
     }
 
-    public void executeSvnLogAndParse(List<HashMap<String, String>> jiraPatchList, String exportDiffFile, String revisionDiffVersion)
+    public void executeSvnLogAndParse(List<HashMap<String, String>> jiraPatchList, String exportDiffFile, String baseRevision)
     {
         for (HashMap map : jiraPatchList)
         {
             String revision = (String) map.get("revision"); // Jira의 SVN Rev.No
 
-                /*String key = (String) map.get("key"); // EER-1234
-                String priority = (String) map.get("priority");
-                String patchImportance = (String) map.get("patchImportance");
-                String menu = (String) map.get("menu");
-                String responseHistory = (String) map.get("responseHistory");
-                String description = (String) map.get("description");*/
+            String key = (String) map.get("key"); // EER-1234
+            String priority = (String) map.get("priority");
+            String patchImportance = (String) map.get("patchImportance");
+            String menu = (String) map.get("menu");
+            String responseHistory = (String) map.get("responseHistory");
+            String description = (String) map.get("description");
 
             if (revision != null && revision.length() > 0)
             {
@@ -53,7 +53,7 @@ public class SvnService
                         _revision = _revision.trim();
                         String svnLog = executeSvnLog(_revision);
 
-                        parseSvnLog(map, _revision, svnLog, exportDiffFile, revisionDiffVersion);
+                        parseSvnLog(map, _revision, svnLog, exportDiffFile, baseRevision);
                     }
                 }
             }
@@ -66,7 +66,7 @@ public class SvnService
         return systemCmdExecutor.executeCommand(command);
     }
 
-    private void parseSvnLog(HashMap<String, String> map, String revision, String svnLog, String exportDiffFile, String revisionDiffVersion)
+    private void parseSvnLog(HashMap<String, String> map, String revision, String svnLog, String exportDiffFile, String baseRevision)
     {
         try
         {
@@ -79,22 +79,10 @@ public class SvnService
                 {
                     if (data.startsWith("M ") || data.startsWith("A "))
                     {
-                        String svnLogType = ""; // M: Merge, A: Append
-                        if (data.startsWith("M "))
-                        {
-                            svnLogType = "M";
-                        }
-                        else if (data.startsWith("A "))
-                        {
-                            svnLogType = "A";
-                        }
-                        else
-                        {
-                            System.err.println("================== else ======================");
-                        }
+                        String svnLogType = getSvnLogType(data); // M: Merge, A: Append
 
-                        String filePath = data.substring(2);
-                        String fileName = data.substring(data.lastIndexOf("/")+1);
+                        String filePath = getFilePathFromSvnLog(data);
+                        String fileName = getFileNameFromSvnLog(data);
 
                         if (patchFileList.length() > 0)
                             patchFileList += "\n";
@@ -103,48 +91,28 @@ public class SvnService
 
                         exportSvnFile(revision, svnUrl + filePath);
 
-                        try
+                        // src copy
+                        String src = tempDir + "/" + fileName;
+                        String dest = outputDir + "/" + jiraId + "/" + filePath;
+
+                        Util.debug("[copy] src copy " + src + " to " + dest + "\n");
+                        FileUtils.copyFile(new File(src), new File(dest));
+                        FileUtils.forceDelete(new File(src));
+
+                        if ("Y".equals(exportDiffFile) && baseRevision.length() > 0 && "M".equals(svnLogType))
                         {
-                            // src copy
-                            String src = tempDir + "/" + fileName;
-                            String dest = outputDir + "/" + jiraId + "/" + filePath;
+                            // base revision과 비교
+                            executeSvnDiff(fileName, filePath, jiraId, baseRevision, revision);
 
-                            Util.debug("[copy] src copy " + src + " to " + dest + "\n");
-                            FileUtils.copyFile(new File(src), new File(dest));
-                            FileUtils.forceDelete(new File(src));
+                            executeSvnLog(fileName, filePath, jiraId, baseRevision, revision);
 
-                            if ("Y".equals(exportDiffFile) && revisionDiffVersion.length() > 0 && "M".equals(svnLogType))
-                            {
-                                // diff file copy
-                                String diffFileName = fileName + ".rev." + revisionDiffVersion + "-" + revision + ".diff";
-                                systemCmdExecutor.diffSvnFile(revisionDiffVersion, svnUrl + filePath, diffFileName, svnDiffCmd);
+                            // 이전버전과 비교
+                            baseRevision = (Integer.parseInt(revision) - 1) + "";
+                            executeSvnDiff(fileName, filePath, jiraId, baseRevision, revision);
 
-                                src = tempDir + "/" + diffFileName;
-                                dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
-                                        + "/" + diffFileName;
-
-                                Util.debug("[copy] diff copy " + src + " to " + dest + "\n");
-                                FileUtils.copyFile(new File(src), new File(dest));
-                                FileUtils.forceDelete(new File(src));
-
-                                // svn log history (시작 revision부터 변경 revision까지 변경사항)
-                                String diffHistoryFileName = fileName + ".rev." + revisionDiffVersion + "-" + revision + ".diff-history.log";
-                                systemCmdExecutor.executeSvnLogFile(revision, svnUrl + filePath, diffHistoryFileName, svnLogCmd, revisionDiffVersion);
-
-                                src = tempDir + "/" + diffHistoryFileName;
-                                dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
-                                        + "/" + diffHistoryFileName;
-
-                                Util.debug("[copy] diff history copy " + src + " to " + dest + "\n");
-                                FileUtils.copyFile(new File(src), new File(dest));
-                                FileUtils.forceDelete(new File(src));
-                            }
+                            executeSvnLog(fileName, filePath, jiraId, baseRevision, revision);
                         }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                            Util.debug(e.getMessage());
-                        }
+
                     }
                 }
 
@@ -164,5 +132,80 @@ public class SvnService
         String filename = fileUrl.substring(fileUrl.lastIndexOf("/")+1);
         String command = "cd " + tempDir + " && " + svnExportCmd + " -r " + revision + " " + fileUrl + " " + " " + filename;
         return systemCmdExecutor.executeCommand(command);
+    }
+    
+    private void executeSvnDiff(String fileName, String filePath, String jiraId, String baseRevision, String revision)
+    {
+        try
+        {
+            // diff file copy
+            String diffFileName = fileName + ".rev." + baseRevision + "-" + revision + ".diff";
+            systemCmdExecutor.diffSvnFile(baseRevision, svnUrl + filePath, diffFileName, svnDiffCmd);
+
+            String src = tempDir + "/" + diffFileName;
+            String dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
+                    + "/" + diffFileName;
+
+            Util.debug("[copy] diff copy " + src + " to " + dest + "\n");
+            FileUtils.copyFile(new File(src), new File(dest));
+            FileUtils.forceDelete(new File(src));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            Util.debug(e.getMessage());
+        }
+    }
+
+    private void executeSvnLog(String fileName, String filePath, String jiraId, String baseRevision, String revision)
+    {
+        try
+        {
+            // svn log history (시작 revision부터 변경 revision까지 변경사항)
+            String diffHistoryFileName = fileName + ".rev." + baseRevision + "-" + revision + ".diff-history.log";
+            systemCmdExecutor.executeSvnLogFile(revision, svnUrl + filePath, diffHistoryFileName, svnLogCmd, baseRevision);
+
+            String src = tempDir + "/" + diffHistoryFileName;
+            String dest = outputDir + "/" + jiraId + "/" + filePath.substring(0, filePath.lastIndexOf("/"))
+                    + "/" + diffHistoryFileName;
+
+            Util.debug("[copy] diff history copy " + src + " to " + dest + "\n");
+            FileUtils.copyFile(new File(src), new File(dest));
+            FileUtils.forceDelete(new File(src));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            Util.debug(e.getMessage());
+        }
+    }
+
+    private String getSvnLogType(String data)
+    {
+        String svnLogType = ""; // M: Merge, A: Append
+        if (data.startsWith("M "))
+        {
+            svnLogType = "M";
+        }
+        else if (data.startsWith("A "))
+        {
+            svnLogType = "A";
+        }
+        else
+        {
+            System.err.println("================== else ======================");
+        }
+
+        return svnLogType;
+    }
+
+    private String getFilePathFromSvnLog(String data)
+    {
+        return data.substring(2);
+    }
+
+    private String getFileNameFromSvnLog(String data)
+    {
+        return data.substring(data.lastIndexOf("/")+1);
     }
 }

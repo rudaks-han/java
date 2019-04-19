@@ -12,6 +12,7 @@
       <includes>
         <include>*.jar</include>
         <include>readme.md</include>
+        <include>build.info</include>
         <include>run.bat</include>
         <include>run.sh</include>
         <include>patch.properties</include>

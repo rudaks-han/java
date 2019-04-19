@@ -1,6 +1,4 @@
 import excel.model.Column;
-import executor.SystemCmdExecutor;
-import executor.factory.SystemCmdFactory;
 import org.apache.commons.io.FileUtils;
 import service.JiraService;
 import service.SvnService;
@@ -23,7 +21,7 @@ public class Main
     private static String jiraSearchCondition;
     private static String excelFilename;
     private static String exportDiffFile;
-    private static String revisionDiffVersion;
+    private static String baseRevision;
 
     JiraService jiraService;
     SvnService svnService;
@@ -80,7 +78,7 @@ public class Main
 
             excelFilename = Util.readString(prop.getProperty("excel.filename"));
             exportDiffFile = prop.getProperty("export.diff.file");
-            revisionDiffVersion = prop.getProperty("revision.diff.version");
+            baseRevision = prop.getProperty("revision.diff.version");
 
             jiraUrl = prop.getProperty("jira.url");
             jiraUser = prop.getProperty("jira.user");
@@ -105,7 +103,7 @@ public class Main
 
         initWorkingDirectory();
 
-        svnService.executeSvnLogAndParse(jiraPatchList, exportDiffFile, revisionDiffVersion);
+        svnService.executeSvnLogAndParse(jiraPatchList, exportDiffFile, baseRevision);
 
         List<Column> columnList = getColumnList();
         ExcelWriter excelWriter = new ExcelWriter("패치목록", columnList, jiraPatchList);
