@@ -130,11 +130,12 @@ public class QueryExcelExporter extends QueryExporter
             cell = row.createCell(i);
             cell.setCellValue(rset.getColumnName(columnIndex));
             cell.setCellStyle(headerStyle);
-            if (sheet.getColumnWidth(i) < 4000) {
+            sheet.autoSizeColumn(i);
+            /*if (sheet.getColumnWidth(i) < 4000) {
                 sheet.setColumnWidth(i, 4000);
             } else {
                 sheet.autoSizeColumn(i);
-            }
+            }*/
         }
     }
 

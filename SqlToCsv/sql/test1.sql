@@ -1,28 +1,24 @@
-select (
-	select count(*) from (select site_name from customize_item group by site_name) a
-) as "사이트 개수(customize_item 기준)",
-(
-	select count(*) from (select site_name from customize_changed_file group by site_name) a
-) as "사이트 개수(customize_changed_file 기준)",
-(
-	select count(*) from (select site_name, filename from customize_item group by site_name, filename) a
-) as "사이트 개수(커스트마이징 내역서 파일 개수 기준)",
-(
-	select count(*) from (select site_name, customize_name from customize_item where customize_name != '' group by site_name, customize_name) a
-) as "커스트마이징 개수",
-(
-	select cnt/all_site
+-- [ui만 변경된 요구사항 목록]
+select a.site_name, a.customize_name, b.requirements, b.java_changes, b.changed_files
+from (
+	select site_name, customize_name,
+			(
+				select coalesce(max('Y'), 'N')
+				from customize_changed_file where site_name = a.site_name and customize_name = a.customize_name
+				and file_ext in ('java')
+			) java_changed,
+			(
+				select coalesce(max('Y'), 'N')
+				from customize_changed_file where site_name = a.site_name and customize_name = a.customize_name
+				and file_ext in ('js', 'jsp', 'css')
+			) ui_changed
 	from (
-		select count(*) cnt, (
-			select count(*) from (select site_name from customize_changed_file group by site_name) a
-		) all_site
-		from (
-			select site_name, customize_name from customize_item where customize_name != '' group by site_name, customize_name
-		) a
+		select site_name, customize_name, count(*)
+		from customize_changed_file
+		where file_ext != ''
+		group by site_name, customize_name
 	) a
-) as "사이트 당 커스트마이징 개수",
-(
-	select count(*) from (
-		select file_ext from customize_changed_file where file_ext != '' group by file_ext
-	) a
-) as "파일 확장자 개수"
+) a, customize_item b
+where a.site_name = b.site_name
+and a.customize_name = b.customize_name
+and java_changed = 'N' and ui_changed = 'Y';

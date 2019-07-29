@@ -113,8 +113,9 @@ public class Main
 							}
 						}
 
-						//println("[execute sql] " + sqls[i]);
+						print("[execute sql] ");
 						rs = stmt.executeQuery(sqls[i]);
+                        println(" ==> done. ");
 						RecordSet rset = new RecordSet(rs);
 						rs.close();
 
