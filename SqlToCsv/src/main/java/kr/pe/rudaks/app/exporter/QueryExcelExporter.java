@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Types;
 import java.util.List;
 
 public class QueryExcelExporter extends QueryExporter
@@ -46,18 +47,21 @@ public class QueryExcelExporter extends QueryExporter
 
     public void save(List<ResultData> resultDataList) throws IOException {
         for (ResultData resultData: resultDataList) {
+            String tabName = "";
             if (resultData.getTabName() == null)
-                createSheet(this.filename.replaceAll(".sql", ""));
+                tabName = this.filename.replaceAll(".sql", "");
             else
-                createSheet(resultData.getTabName());
+                tabName = resultData.getTabName();
 
+            createSheet(tabName);
             RecordSet rset = resultData.getRset();
 
             createHeaderCell(rset);
             createDataCell(rset);
 
-            saveAsFile();
         }
+
+        saveAsFile();
     }
 
     @Override
@@ -75,6 +79,8 @@ public class QueryExcelExporter extends QueryExporter
             FileOutputStream fos = new FileOutputStream(getOutputFilename());
             workbook.write(fos);
             fos.close();
+
+            System.out.println("[save as file] " + getOutputFilename());
 
         }
         catch (IOException e)
@@ -124,6 +130,11 @@ public class QueryExcelExporter extends QueryExporter
             cell = row.createCell(i);
             cell.setCellValue(rset.getColumnName(columnIndex));
             cell.setCellStyle(headerStyle);
+            if (sheet.getColumnWidth(i) < 4000) {
+                sheet.setColumnWidth(i, 4000);
+            } else {
+                sheet.autoSizeColumn(i);
+            }
         }
     }
 
@@ -136,8 +147,20 @@ public class QueryExcelExporter extends QueryExporter
                 row = sheet.createRow((short) rowCount);
 
                 for (int i = 0; i < columnCount; i++) {
+                    int columnIndex = i + 1;
                     cell = row.createCell(i);
-                    cell.setCellValue(rset.getString(i + 1));
+
+                    int columnType = rset.getColumnType(columnIndex);
+                    if (columnType == Types.NUMERIC || columnType == Types.INTEGER || columnType == Types.BIGINT) {
+                        cell.setCellValue(rset.getInt(columnIndex));
+                    } else if (columnType == Types.DOUBLE || columnType == Types.FLOAT) {
+                        cell.setCellValue(rset.getDouble(columnIndex));
+                    } else if (columnType == Types.CHAR || columnType == Types.VARCHAR) {
+                        cell.setCellValue(rset.getString(columnIndex));
+                    } else {
+                        cell.setCellValue(rset.getString(columnIndex));
+                    }
+
                     cell.setCellStyle(bodyStyle);
                 }
 

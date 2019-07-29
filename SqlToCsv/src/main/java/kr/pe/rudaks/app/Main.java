@@ -81,8 +81,8 @@ public class Main
 			{
 	            String sql = fileListMap.get(key);
 	            //System.err.println(sql);
-	            
-	            println("[execute sql] " + key);
+
+	            print("\n[read sql] " + key);
 	            
 	            stmt = conn.createStatement();
 	            try
@@ -96,6 +96,7 @@ public class Main
 					Boolean [] validSqlFlags = validateSqlFlag(sqls);
 
 					int validSqlCount = validSqlCount(validSqlFlags);
+					println(" ==> " + validSqlCount + " sql(s) found");
 
 					for (int i=0; i<sqls.length; i++) {
 
@@ -112,6 +113,7 @@ public class Main
 							}
 						}
 
+						//println("[execute sql] " + sqls[i]);
 						rs = stmt.executeQuery(sqls[i]);
 						RecordSet rset = new RecordSet(rs);
 						rs.close();

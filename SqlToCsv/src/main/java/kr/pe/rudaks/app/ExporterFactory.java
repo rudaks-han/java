@@ -10,12 +10,10 @@ public class ExporterFactory
 	private static QueryExporter queryExporter = null;
 
 	public static QueryExporter getInstance(String type) {
-		if (queryExporter == null) {
-			if ("csv".equals(type)) {
-				queryExporter = new QueryCsvExporter();
-			} else if ("excel".equals(type)) {
-				queryExporter = new QueryExcelExporter();
-			}
+		if ("csv".equals(type)) {
+			queryExporter = new QueryCsvExporter();
+		} else if ("excel".equals(type)) {
+			queryExporter = new QueryExcelExporter();
 		}
 
 		return queryExporter;
