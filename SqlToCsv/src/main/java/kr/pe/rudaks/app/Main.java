@@ -12,6 +12,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main 
 {
@@ -91,16 +93,32 @@ public class Main
 
 					List<ResultData> list = new ArrayList<ResultData>();
 
-					ResultData resultData = null;
+					Boolean [] validSqlFlags = validateSqlFlag(sqls);
+
+					int validSqlCount = validSqlCount(validSqlFlags);
 
 					for (int i=0; i<sqls.length; i++) {
+
+						if (!validSqlFlags[i]) // SQL이 유효하지 않다면
+							continue;
+
+						String tabName = "";
+						if (validSqlCount == 1) {
+							tabName = null;
+						} else {
+							tabName = getTabName(sqls[i]);;
+							if ("".equals(tabName)) {
+								tabName = "TAB " + (i + 1);
+							}
+						}
 
 						rs = stmt.executeQuery(sqls[i]);
 						RecordSet rset = new RecordSet(rs);
 						rs.close();
 
-						list.add(new ResultData("TAB " + (i+1), rset));
+						list.add(new ResultData(tabName, rset));
 					}
+
 
 					QueryExporter queryExporter = ExporterFactory.getInstance(exportType);
 					queryExporter.setEncoding(outputEncoding);
@@ -127,6 +145,47 @@ public class Main
     		if (stmt != null) { try { stmt.close(); } catch (Exception e) {} }
     		if (conn != null) { try { conn.close(); } catch (Exception e) {} }
     	}
+	}
+
+	private Boolean[] validateSqlFlag(String [] sqls) {
+		Boolean [] flag = new Boolean[sqls.length];
+		for (int i=0; i<sqls.length; i++) {
+			String sql = sqls[i];
+			sql = sql.replace(" ", "");
+			sql = sql.replace("\t", "");
+			sql = sql.replace("\n", "");
+
+			if (sql.length() > 0)
+				flag[i] = true;
+			else
+				flag[i] = false;
+		}
+
+		return flag;
+	}
+
+	private int validSqlCount(Boolean [] sqls) {
+		int count = 0;
+		for (int i=0; i<sqls.length; i++) {
+			if (sqls[i])
+				count++;
+		}
+
+		return count;
+	}
+
+	private String getTabName(String sql) {
+		String tabName = "";
+
+		String regexp = "-- \\[(.*)\\].*";
+
+		Pattern infoPattern = Pattern.compile(regexp);
+		Matcher infoMatcher = infoPattern.matcher(sql);
+		while (infoMatcher.find()){
+			tabName = infoMatcher.group(1);
+		}
+
+		return tabName;
 	}
 
 	private String mapToSqlVariable(HashMap replaceStringMap, String sql) {
@@ -218,14 +277,17 @@ public class Main
 	
 	private static HashMap<String, String> getQueryMap(String query)
 	{
-	    String[] params = query.split("&");
-	    HashMap<String, String> map = new HashMap<String, String>();
-	    for (String param : params)
-	    {
-	        String name = param.split("=")[0];
-	        String value = param.split("=")[1];
-	        map.put(name, value);
-	    }
+		HashMap<String, String> map = new HashMap<String, String>();
+
+		if (query != null) {
+			String[] params = query.split("&");
+
+			for (String param : params) {
+				String name = param.split("=")[0];
+				String value = param.split("=")[1];
+				map.put(name, value);
+			}
+		}
 	    return map;
 	}
 	

@@ -20,11 +20,18 @@ public class QueryCsvExporter extends QueryExporter {
 
     public void save(List<ResultData> resultDataList) throws IOException {
         for (ResultData resultData: resultDataList) {
-            CSVWriter writer = new CSVWriter(new FileWriterWithEncoding(resultData.getTabName(), encoding));
+            CSVWriter writer = new CSVWriter(new FileWriterWithEncoding(getOutputFilename(), encoding));
             try {
                 RecordSet rset = resultData.getRset();
+
+                String[] str = new String[rset.getColumnCount()];
+                for (int i = 0; i < rset.getColumnCount(); i++) {
+                    int columnIndex = i + 1;
+                    str[i] = rset.getColumnName(columnIndex);
+                }
+                writer.writeNext(str);
+
                 while (rset.next()) {
-                    String[] str = new String[rset.getColumnCount()];
                     for (int i = 0; i < rset.getColumnCount(); i++) {
                         int columnIndex = i + 1;
                         str[i] = rset.getString(columnIndex);
@@ -41,4 +48,5 @@ public class QueryCsvExporter extends QueryExporter {
             }
         }
     }
+
 }

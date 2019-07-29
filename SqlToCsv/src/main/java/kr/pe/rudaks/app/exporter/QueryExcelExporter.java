@@ -46,7 +46,10 @@ public class QueryExcelExporter extends QueryExporter
 
     public void save(List<ResultData> resultDataList) throws IOException {
         for (ResultData resultData: resultDataList) {
-            createSheet(resultData.getTabName());
+            if (resultData.getTabName() == null)
+                createSheet(this.filename.replaceAll(".sql", ""));
+            else
+                createSheet(resultData.getTabName());
 
             RecordSet rset = resultData.getRset();
 
@@ -62,13 +65,7 @@ public class QueryExcelExporter extends QueryExporter
         String filename = this.filename.replaceAll(".sql", "");
         String outputFile = outputPath + "/" + filename + ".xls";
 
-        System.out.println("outputFile : " + outputFile);
         return outputFile;
-    }
-
-    private String getTabName() {
-        String tabName = this.filename.replaceAll(".sql", "");
-        return tabName;
     }
 
     private void saveAsFile() {
