@@ -44,11 +44,11 @@
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/oracle/ojdbc6 -->
-        <dependency>
-            <groupId>com.oracle</groupId>
+        <!--<dependency>
+            <groupId>oracle</groupId>
             <artifactId>ojdbc6</artifactId>
-            <version>11.2.0.3.0</version>
-        </dependency>
+            <version>11.2.0.3</version>
+        </dependency>-->
 
         <!-- https://mvnrepository.com/artifact/net.sf.opencsv/opencsv -->
         <dependency>
@@ -61,6 +61,12 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>9.3-1101-jdbc4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.16</version>
         </dependency>
 
     </dependencies>

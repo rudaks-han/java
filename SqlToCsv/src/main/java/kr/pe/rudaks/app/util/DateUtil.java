@@ -1,4 +1,4 @@
-package kr.pe.rudaks.app;
+package kr.pe.rudaks.app.util;
 
 import java.text.*;
 import java.util.*;
