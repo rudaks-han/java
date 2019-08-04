@@ -1,0 +1,297 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/testdb
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database: postgresql
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        use_sql_comments: false
+  output:
+    ansi:
+      enabled: detect
+logging:
+  level:
+    root: error
+    org:
+      hibernate:
+        type:
+          descriptor:
+            sql: trace
+
+config:
+  inputFilePath: /Users/rudaks/temp/custom2docx
+  inputFileExtension: docx
+  outputFilePath: /Users/rudaks/temp/output
+  writeToExcel: true
+  writeToDb: true
+  compareFileExistWithSvn: true
+  svnPath: /Users/rudaks/_WORK/_SVN/SuperTalk/supertalk_tags
+  svnDiffSavePath: /Users/rudaks/_WORK/_GIT/analyzecustomizedoc/svn_diff_files
+  svnUsername: xxx
+  svnPassword: xxx
+  excelColumns:
+    - id: "customizeName"
+      columnName: "커스트마이징 명칭"
+      autoSize: true
+      addColumnWidth: 0
+    - id: "requirements"
+      columnName: "요구사항"
+      autoSize: false
+      addColumnWidth: 8400
+      mapToWordParagraph: 고객요구사항,프로세스 설명
+    - id: "javaChanges"
+      columnName: "java 변경사항"
+      autoSize: false
+      addColumnWidth: 8400
+      mapToWordParagraph: 상세 구현 내용
+    - id: "dbChanges"
+      columnName: "DB 변경사항"
+      autoSize: false
+      addColumnWidth: 8400
+      mapToWordParagraph: 테이블 변경
+    - id: "changedFiles"
+      columnName: "변경 파일"
+      autoSize: false
+      addColumnWidth: 8400
+      mapToWordParagraph: 패키지 경로,패키지경로
+    - id: "customizeType"
+      columnName: "커스터마이징 타입"
+      autoSize: false
+      addColumnWidth: 0
+    - id: "changedService"
+      columnName: "변경 서비스"
+      autoSize: false
+      addColumnWidth: 0
+    - id: "developer"
+      columnName: "작업자"
+      autoSize: false
+      addColumnWidth: 0
+      mapToWordParagraph: 수정자
+    - id: "solution"
+      columnName: "해결방안"
+      autoSize: false
+      addColumnWidth: 0
+    - id: "cause"
+      columnName: "이유"
+      autoSize: false
+      addColumnWidth: 0
+
+  filenameToPackages:
+    - filename: ticketWindow.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/monitoring
+    - filename: EEPublic.java
+      filepath: /supertalk-02-commons/supertalk-02-commons-common/src/main/java/spectra/ee/commons
+    - filename: Ticket.xml
+      filepath: /supertalk-05-engine/src/main/resources/ibatis/oracle/common
+    - filename: ApiPublic.java
+      filepath: /supertalk-02-commons/supertalk-02-commons-restapi/src/main/java/spectra/ee/commons/api
+    - filename: TicketDaoImpl.java
+      filepath: /supertalk-05-engine/src/main/java/spectra/ee/engine/common/dao/ibatis
+    - filename: ScheduleJobServiceImpl.java
+      filepath: /supertalk-05-engine/src/main/java/spectra/ee/engine/scheduler/service
+    - filename: viewConsultingQnaListPage.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/monitoring
+    - filename: main.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps
+    - filename: viewConsultingTalkQuestionPage.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/monitoring
+    - filename: TalkMessage.xml
+      filepath: /supertalk-05-engine/src/main/resources/ibatis/oracle/common
+    - filename: viewTalkBusinessInfoPane.jsp
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/WEB-INF/jsp/monitoring
+    - filename: TalkUIServiceImpl.java
+      filepath: /supertalk-13-ui-webapps/src/main/java/spectra/ee/ui/webapps/talk/service
+    - filename: viewConsultingAnswerPage.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/monitoring
+    - filename: format.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/lib/spectra/util
+    - filename: PostServiceAdvice.java
+      filepath: /supertalk-05-engine/src/main/java/spectra/ee/engine/common/service
+    - filename: TicketList.xml
+      filepath: /supertalk-05-engine/src/main/resources/ibatis/oracle/common
+    - filename: TicketServiceImpl.java
+      filepath: /supertalk-05-engine/src/main/java/spectra/ee/engine/ticket/service
+    - filename: TalkServiceImpl.java
+      filepath: /supertalk-05-engine/src/main/java/spectra/ee/engine/talk/service
+    - filename: incQnaListCondition.jsp
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/WEB-INF/jsp/monitoring
+    - filename: talkService.js
+      filepath: /supertalk-21-ui-proxy/src/main/webapp/front/v1/js/talk
+    - filename: AccountServiceImpl.java
+      filepath: /supertalk-05-engine/src/main/java/spectra/ee/engine/account/service
+    - filename: talkWindow.js
+      filepath: /supertalk-21-ui-proxy/src/main/webapp/kepco_mobile/js/talk
+    - filename: TalkStart.java
+      filepath: /supertalk-20-rest-api-inmethod/src/main/java/spectra/ee/restapi/cmd/talk/server/command/customer
+    - filename: viewConsultingQnaQuestionPage.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/monitoring
+    - filename: AbstractCommandProcessor.java
+      filepath: /supertalk-20-rest-api-inmethod/src/main/java/spectra/ee/restapi/cmd
+    - filename: gatewayConsulting.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/monitoring
+    - filename: AccountUIServiceImpl.java
+      filepath: /supertalk-13-ui-webapps/src/main/java/spectra/ee/ui/webapps/account/service
+    - filename: ApiErrorCode.java
+      filepath: /supertalk-01-framework/supertalk-01-framework-core/src/main/java/spectra/base/api
+    - filename: EnvUIServiceImpl.java
+      filepath: /supertalk-13-ui-webapps/src/main/java/spectra/ee/ui/webapps/env/service
+    - filename: common.js
+      filepath: /supertalk-21-ui-proxy/src/main/webapp/front/v1/js/spectra/common
+    - filename: talkAPI.js
+      filepath: /supertalk-21-ui-proxy/src/main/webapp/front/v1/js/spectra/talk
+    - filename: talkCommand.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/monitoring
+    - filename: saveSystemTemplatePopup.js
+      filepath: /supertalk-13-ui-webapps/src/main/webapp/js/webapps/managing/setup/template
+    - filename: gateway.js
+      filepath: /supertalk-04-gateway/supertalk-04-gateway-javascript/src/main/webapp
+    - filename: TalkMessageDaoImpl.java
+      filepath: /supertalk-05-engine/src/main/java/spectra/ee/engine/talk/dao/ibatis
+    - filename: TicketUIServiceImpl.java
+      filepath: /supertalk-13-ui-webapps/src/main/java/spectra/ee/ui/webapps/ticket/service
+
+  svnSiteNames:
+    - siteName: SK_CHATBOT_EER_1.7.0
+      svnName: SK_CHATBOT_EER_1.7
+    - siteName: 파라다이스카지노_EER_1.3.0
+      svnName: 파라다이스카지노_EER
+    - siteName: kakao_EER_1.2.0
+      svnName: kakao_EER
+    - siteName: NTTBIZ330_EER_1.3.1
+      svnName: NTTBIZ330
+    - siteName: 재춘관제약소_ECC_2.0.2
+      svnName: 재춘관제약소
+    - siteName: 웰컴론EER_구축형리스_EER_1.1.0
+      svnName: 웰컴론EER_구축형리스
+    - siteName: LG전자AWS_ECC_2.1.3
+      svnName: LG전자AWS
+    - siteName: SHINHAN_BANK_EER_1.6.0
+      svnName: SHINHAN_BANK_EER_1.6
+    - siteName: 대한항공_ECC_1.0.0
+      svnName: 대한항공
+    - siteName: K뱅크_EER_1.4.0
+      svnName: K뱅크_EER_1.4
+    - siteName: 칸투칸_OnDemand_EER_1.7.0
+      svnName: 칸투칸_OnDemand_EER_1.7
+    - siteName: AIG손해보험_ECC_2.1.4
+      svnName: AIG손해보험
+    - siteName: 한국토지주택공사_ECC_2.1.2
+      svnName: 한국토지주택공사
+    - siteName: 하나은행_EER_1.1.0
+      svnName: 하나은행_EER_1.1
+    - siteName: Talk_3.0J_ECC_2.0.2
+      svnName: Talk_3.0J
+    - siteName: 메트라이프생명_EER_1.8.0
+      svnName: 메트라이프생명_EER_1.8
+    - siteName: 국민은행_EER_1.6.0
+      svnName: 국민은행_EER_1.6
+    - siteName: 스펙트라_SIS_EER_1.8.1
+      svnName: 스펙트라_SIS_EER
+    - siteName: 수협은행_EER_1.5.0
+      svnName: 수협은행_EER_1.5
+    - siteName: 야놀자_EER_3.0.0
+      svnName: 야놀자_EER_3.0
+    - siteName: 대구은행_EER_1.6.0
+      svnName: 대구은행_EER_1.6
+    - siteName: 더케이손해보험_EER_2.0.0
+      svnName: 더케이손해보험_EER_2.0
+    - siteName: 국민카드_EER_3.0.0
+      svnName: 국민카드_EER_3.0
+    - siteName: 삼성카드_EER_1.3.0
+      svnName: 삼성카드_EER_1.3
+    - siteName: shinhan.bank_EER_2.2.0
+      svnName: shinhan.bank
+    - siteName: 카카오뱅크_EER_1.6.0
+      svnName: 카카오뱅크_EER_1.6
+    - siteName: SKT_TWD_EER_1.8.0
+      svnName: SKT_TWD_EER_1.8
+    - siteName: 기업은행_EER_2.0.0
+      svnName: 기업은행_EER_2.0
+    - siteName: KB캐피탈_구축형리스_ECC_2.1.3
+      svnName: KB캐피탈_구축형리스
+    - siteName: KOPTICOM_ECC_2.0.2
+      svnName: KOPTICOM
+    - siteName: NTT비즈링크_ECC_2.0.2
+      svnName: NTT비즈링크
+    - siteName: GSShop_ECC_1.1.2
+      svnName: GSShop
+    - siteName: 경동나비엔_EER_2.0.0
+      svnName: 경동나비엔_2.0.0
+    - siteName: KCB_EER_2.1.0
+      svnName: KCB_EER_2.1
+    - siteName: hanwhawm_EER_2.0.0
+      svnName: hanwhawm_EER2.0
+    - siteName: 컨텐츠게이트코리아_ECC_2.1.3
+      svnName: 컨텐츠게이트코리아
+    - siteName: socar_EER_1.3.2
+      svnName: socar
+    - siteName: 우아한형제들_EER_1.0.1
+      svnName: 우아한형제들
+    - siteName: 아주캐피탈_ECC_1.1.3
+      svnName: 아주캐피탈_ECC
+    - siteName: GS건설_EER_1.1.2
+      svnName: GS건설
+    - siteName: 경남은행_EER_1.4.0
+      svnName: 경남은행_EER_1.4
+    - siteName: 롯데닷컴_EER_1.1.0
+      svnName: 롯데닷컴
+
+  svnRepositoryPaths:
+    - siteName: SHINHAN_BANK_EER_1.6.0
+      svnPath: /trunk/enomix_src
+    - siteName: 대한통운_EER_1.9.0
+      svnPath: /trunk
+    - siteName: KB손해보험_EER_3.0.2
+      svnPath: /enomixSrc
+    - siteName: DEMO_EER_2.0.0_ChatBot
+      svnPath: /enomixSrc
+    - siteName: 한국토지주택공사_ECC_2.1.2
+      svnPath: /trunk/enomix_maven
+    - siteName: SK렌터카_EER_1.9.0
+      svnPath: /enomixSrc
+    - siteName: 국민은행_EER_1.6.0
+      svnPath: /trunk/enomixsrc
+    - siteName: 국민연금_EER_3.0.2
+      svnPath: /trunk/enomixsrc
+    - siteName: 남양주시청_EER_1.9.0
+      svnPath: /enomixSrc
+    - siteName: 신한금융투자_EER_1.6.1
+      svnPath: /enomixSrc
+    - siteName: 롯데호텔_EER_3.0.2
+      svnPath: /trunk/enomixSrc
+    - siteName: 국민카드_EER_3.0.0
+      svnPath: /trunk/enomixsrc
+    - siteName: 카카오뱅크_EER_1.6.0
+      svnPath: /trunk/enomixsrc
+    - siteName: 한국토지주택공사_EER_1.7.1
+      svnPath: /enomixSrc
+    - siteName: 코오롱패션_EER_1.3.1
+      svnPath: /trunk/enomixsrc
+    - siteName: SSFSHOP_EER_1.8.2
+      svnPath: /enomixSrc
+    - siteName: SSFSHOP_EER_2.0.1
+      svnPath: /enomixSrc
+    - siteName: 경동나비엔_EER_2.0.0
+      svnPath: /enomixSrc
+    - siteName: 한국전력공사_ECC_2.0.2
+      svnPath: /trunk/enomix_src
+    - siteName: KCB_EER_2.1.0
+      svnPath: /trunk/enomixsrc
+    - siteName: hanwhawm_EER_2.0.0
+      svnPath: /trunk/enomixsrc
+    - siteName: socar_EER_1.3.2
+      svnPath: /trunk/enomixsrc
+    - siteName: SHINHAN_LIFE_EER_1.6.1
+      svnPath: /trunk/shinhan_life
+    - siteName: 경남은행_EER_1.4.0
+      svnPath: /trunk/enomixsrc
+    - siteName: LOEN_EER_1.3.0
+      svnPath: /trunk/maven_svn
